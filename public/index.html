@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://code.jquery.com/jquery.min.js"></script>
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <link
+      href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Share+Tech+Mono&amp;effect=outline"
+      rel="stylesheet"
+      type="text/css"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&amp;display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+      crossorigin="anonymous"
+    ></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://kit.fontawesome.com/e59294cd4b.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <script src="libs/jquery.simple-text-rotator.min.js"></script>
+    <link href="libs/simpletextrotator.css" rel="stylesheet" type="text/css" />
+
+    <link href="style.css?v=5" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <div class="fullscreen-bg">
+      <img src="assets/hexagon_panthor.png" alt="Logo" class="logo" />
+    </div>
+    <div id="content"></div>
+    <div id="contentMain"></div>
+    <div id="alerts" style="position: absolute; right: 30px; top: 50px; z-index: 2000; display: grid"></div>
+    <script>
+      var socket = io();
+
+      function playAudio(path, volume = 0.9) {
+        var audio = new Audio('/' + path);
+        audio.volume = volume;
+        audio.play();
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function transition() {
+        console.log('TRANSITION PLAYED');
+        $('.fullscreen-bg').addClass('transition');
+        setTimeout(function () {
+          $('.fullscreen-bg').removeClass('transition');
+        }, 6000);
+      }
+
+      const animateCSS = (element, animation, prefix = 'animate__') =>
+        // We create a Promise and return it
+        new Promise((resolve, reject) => {
+          const animationName = `${prefix}${animation}`;
+          const node = document.querySelector(element);
+
+          node.classList.add(`${prefix}animated`, animationName);
+
+          // When the animation ends, we clean the classes and resolve the Promise
+          function handleAnimationEnd(event) {
+            event.stopPropagation();
+            node.classList.remove(`${prefix}animated`, animationName);
+            resolve('ended');
+          }
+
+          node.addEventListener('animationend', handleAnimationEnd, { once: true });
+        });
+
+      async function addAlert(title, message, icon, duration, hint = false) {
+        if (title != '') {
+          title = title + '<br />';
+        }
+        let div = $('#alerts').append(`<div class="newAlert shadow-lg" style="float: right" data-id="${title}">
+                            <div class="alertImageBox">
+                            <img src="assets/hexagon.png" width="90px" height="90px" style="text-shadow: 2px 2px 4px #000000;">
+                            <div><i class="icon ${icon} newAlertIcon"></i></div></div>
+                            <h5 class="newAlertText">${title}<span class="newAlertSubText">${message}</span></h5>
+                            </div>`);
+        animateCSS('.newAlert[data-id="' + title + '"]', 'fadeInRight');
+
+        if (hint) {
+          $('.newAlert[data-id="' + title + '"]').addClass('newAlertHint');
+        }
+
+        if (duration > 0) {
+          await sleep(duration * 1000);
+          animateCSS('.newAlert[data-id="' + title + '"]', 'fadeOutRight').then((message) => {
+            $('.newAlert[data-id="' + title + '"]').remove();
+            $('.newAlert').nextAll().addClass('tempAlert');
+            animateCSS('.tempAlert', 'slideInUp');
+            $('.tempAlert').removeClass('tempAlert');
+          });
+        }
+      }
+
+      $(function () {
+        $('#content').load('scenes/start.html');
+        $('#contentMain').load('scenes/main.html');
+        //transition();
+
+        socket.on('update', function (type, data) {
+          switch (type) {
+            case 'topic':
+              $('#dyn_project').text(data.toUpperCase());
+              break;
+
+            case 'timer': // for start page
+              transition();
+              break;
+
+            case 'hint':
+              if ($('.newAlertHint').length > 0) {
+                animateCSS('.newAlertHint', 'fadeOutRight').then((message) => {
+                  $('#alerts').find('.newAlertHint:first').remove();
+                  animateCSS('.newAlert', 'slideInUp');
+                });
+              }
+              if (/*$( '.mainAlert[data-id="' + data[1] + '"]' ).length === 0 &&*/ !(data[0] === 'none')) {
+                addAlert(data[1], data[2], data[3], 0, true);
+              }
+              break;
+          }
+        });
+
+        socket.on('twitchEvent', function (type, data) {
+          console.log('SOCKET: EVENT');
+          console.log(type, data);
+
+          switch (type) {
+            case 'follower':
+              addAlert(data, 'Neuer Follower', 'fa-solid fa-heart', 10);
+              playAudio('assets/enter.ogg', 0.2);
+              break;
+            case 'raid':
+              raidAnimation(data[0], data[1]);
+              break;
+          }
+        });
+
+        socket.on('scene', async function (scene, instant) {
+          console.log('SCENE CHANGE: ' + scene);
+          if (!instant) {
+            transition();
+            await sleep(1000);
+          }
+          switch (scene) {
+            case 'start':
+              $('#content').load('scenes/start.html', function () {});
+              break;
+            case 'dev':
+              $('#content').html('');
+              break;
+            case 'pause':
+              $('#content').load('scenes/default.html', function () {
+                $('#input-line1').text('KURZE PAUSE');
+                $('#input-line2').text('BIS GLEICH!');
+              });
+              break;
+            case 'end':
+              $('#content').load('scenes/default.html', function () {
+                $('#input-line1').text('STREAM ENDE');
+                $('#input-line2').text('AUF WIEDERSEHEN!');
+              });
+
+              break;
+          }
+        });
+
+        socket.on('chatMessage', async function (text, details, user) {
+          console.log('SOCKET: CHAT MESSAGE');
+          console.log(text, user);
+
+          const randomID = Math.floor(Math.random() * 1001);
+
+          var badges = [];
+
+          if (user[1]) {
+            // Broadcaster
+            badges.push(
+              '<span class="rankBadge"><i class="fa-solid fa-wand-magic-sparkles text-gradient"></i> Streamer</span>'
+            );
+          }
+          if (user[2]) {
+            // Mod
+            badges.push(
+              '<span class="rankBadge"><i class="fa-solid fa-shield" style="color: #00AD03;"></i> Moderator</span>'
+            );
+          }
+          if (user[3]) {
+            // Artist
+            badges.push(
+              '<span class="rankBadge"><i class="fa-solid fa-clapperboard" style="color: #1E69FF;"></i> Artist</span>'
+            );
+          }
+          if (user[4]) {
+            // VIP
+            badges.push('<span class="rankBadge"><i class="fa-solid fa-star" style="color: #E005B9;"></i> VIP</span>');
+          }
+
+          var borderColor = '#464545';
+          if (details[0]) {
+            borderColor = 'rgb(255, 117, 230)';
+            badges.push('<i class="fa-solid fa-hand-peace" style="color: rgb(255, 117, 230);"></i>');
+          }
+
+          $('#chat').prepend(`
+                        <p class="chat-message" style=" border: solid ${borderColor};" id="msg_${randomID}">
+                            <b style="font-size: 12px;">${user[0]}</b> ${badges.join(' ')}<br />${text}
+                        </p>`);
+
+          if ($('#chat').outerHeight() > 450) {
+            //$('#chat').children(":first").css( "background-color", "red" );
+            $('#chat').children(':last').fadeOut(100);
+            await sleep(105);
+            $('#chat').children(':last').remove();
+          }
+
+          $('#msg_' + randomID)
+            .hide()
+            .fadeIn(500);
+
+          await sleep(10000 + text.length * 20);
+          $('#msg_' + randomID).fadeOut(500);
+          await sleep(550);
+          $('#msg_' + randomID).remove();
+        });
+      });
+    </script>
+  </body>
+</html>

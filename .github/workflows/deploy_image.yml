@@ -1,0 +1,36 @@
+name: Deploy Docker Image
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [trigger_deployment]
+
+env:
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+  DOCKER_USER: ${{ vars.DOCKER_USER }}
+  CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+
+jobs:
+  renew_docker_compose:
+    name: Rebuild Remote Docker-Compose
+    runs-on: ubuntu-latest
+    steps:
+      - name: Connect and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            echo ${{ secrets.GH_PAT }} | docker login ghcr.io -u ${{ env.DOCKER_USER }} --password-stdin
+            CONTAINER_NAME="${{ env.CONTAINER_NAME }}"
+            if [ "$(docker ps -a --filter "name=$CONTAINER_NAME" --format '{{.Names}}')" ]; then
+              docker container stop $CONTAINER_NAME
+              docker container rm -f $CONTAINER_NAME
+            fi
+            if [ "$(docker images -q "${{ env.IMAGE_NAME }}:latest")" ]; then
+              docker rmi "${{ env.IMAGE_NAME }}:latest"
+            fi
+            docker pull ${{ env.IMAGE_NAME }}:latest
+            docker run -itd --env-file '${{ vars.SERVER_ENV_FILE_LOCATION }}' --restart on-failure:3 -p '8090:8090' --name=$CONTAINER_NAME ${{ env.IMAGE_NAME }}:latest

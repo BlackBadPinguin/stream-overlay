@@ -1,0 +1,147 @@
+<img src="assets/pause.png" id="pause" width="1920" height="1080" />
+<img src="assets/panthor_text.png" style="position: fixed; width: 30%; top: -170px; left: -30px" />
+<img
+  src="assets/element_move1.png"
+  class="floatImage"
+  width="1920"
+  height="1080"
+  style="position: fixed; top: 0; left: 80px; animation: float 10s ease-in-out infinite"
+/>
+<img
+  src="assets/element_move2.png"
+  class="floatImage"
+  width="1920"
+  height="1080"
+  style="position: fixed; top: 0; left: 80px; animation: float 6s ease-in-out infinite"
+/>
+<div class="chat-container" style="top: 190px; left: 20px; width: 450px; height: 620px">
+  <div class="chat-title">
+    <h5><img src="assets/hexagon.png" /> CHAT</h5>
+  </div>
+  <div class="chat-body" id="chat"></div>
+</div>
+
+<div style="position: absolute; top: 340px; left: 590px">
+  <h5 style="font-size: 40pt; line-height: 40pt" class="text-shadow">
+    <b style="font-size: 70pt">STREAM STARTET</b><br />
+    GLEICH GEHT ES LOS!
+  </h5>
+  <div id="progress" style="position: absolute; padding-top: 60px">
+    <div
+      class="progress"
+      style="height: 30px; width: 871px; --bs-progress-bar-bg: white; --bs-progress-bg: #929292"
+      role="progressbar"
+      aria-valuenow="50"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div class="progress-bar" id="starting_bar" style="width: 50%"></div>
+    </div>
+    <div
+      id="countdown"
+      style="
+        position: relative;
+        text-align: right;
+        line-height: 18pt;
+        font-weight: bold;
+        font-size: 40pt;
+        font-family: monospace;
+      "
+    >
+      <p id="timer">10:00</p>
+    </div>
+  </div>
+</div>
+
+<video
+  id="intro"
+  style="
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999999;
+    display: none;
+  "
+>
+  <source src="assets/Panthor_Intro.mp4" type="video/mp4" />
+</video>
+<div
+  id="intro_over"
+  style="
+    display: none;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    z-index: 9999999;
+    position: relative;
+    text-align: center;
+  "
+>
+  <div style="position: relative; top: -60px; left: 220px"><img src="assets/hexagon_panthor.png" height="100px" /></div>
+  <h5 class="text-gradient"><br />WARTEN AUF STREAMER...</h5>
+</div>
+
+<script>
+  $(document).ready(function () {
+    var timer;
+    var int;
+    async function startTimer(duration) {
+      $('#progress').hide();
+      $('#countdown').hide();
+      $('#intro').hide();
+      $('#intro_over').hide();
+      clearInterval(int);
+      var display = document.querySelector('#timer');
+      var bar = document.querySelector('#starting_bar');
+      var video = document.querySelector('#intro');
+      timer = duration;
+      var minutes, seconds;
+      bar.style.width = '0%';
+      int = setInterval(async function () {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+
+        display.textContent = minutes + ':' + seconds;
+
+        bar.style.width = (1 - timer / duration) * 100 + '%';
+
+        if (--timer < 0) {
+          clearInterval(int);
+          transition();
+          await sleep(700);
+          $('#intro').show();
+          video.pause();
+          video.currentTime = 0;
+          video.play();
+        }
+      }, 1000);
+      await sleep(1000);
+      $('#progress').fadeIn();
+      $('#countdown').fadeIn();
+    }
+    startTimer(5 * 60);
+
+    document.getElementById('intro').addEventListener(
+      'ended',
+      function () {
+        $('#intro_over').css('display', 'flex');
+      },
+      true
+    );
+
+    socket.on('update', async function (type, data) {
+      switch (type) {
+        case 'timer': // for start page
+          await sleep(700);
+          startTimer(60 * data);
+          break;
+      }
+    });
+  });
+</script>

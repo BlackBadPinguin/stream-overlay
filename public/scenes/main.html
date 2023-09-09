@@ -1,0 +1,91 @@
+<div id="main_bottom">
+  <span class="serverURL">PANTHOR.DE</span>
+  <img src="/assets/hexagon_panthor.png" class="panthor_hexagon" />
+  <div class="parent">
+    <div class="div1">
+      <div id="profileImage">
+        <img id="dyn_streamer_pic" src="/assets/example1.jpg" />
+      </div>
+      <h5>
+        <span id="dyn_streamer_name" class="text-gradient">&#60;NAME&#62;</span><br />
+        <span id="dyn_streamer_rank">&#60;RANK&#62;</span>
+      </h5>
+    </div>
+    <div class="div2">
+      <span id="Instagram" class="social_icon"
+        ><i class="fa-brands fa-instagram"></i><span class="social_text">PanthorDE</span></span
+      >
+      <span id="tiktok" class="social_icon"
+        ><i class="fa-brands fa-tiktok"></i><span class="social_text">PanthorDE</span></span
+      >
+      <span id="youtube" class="social_icon"
+        ><i class="fa-brands fa-youtube"></i><span class="social_text">vabene1111</span></span
+      >
+      <span id="twitter" class="social_icon"
+        ><i class="fa-brands fa-twitter"></i><span class="social_text">PanthorDE</span></span
+      >
+      <!--<span id="instagram" class="social_icon"><i class="fa-brands fa-discord"></i></span>-->
+    </div>
+    <div class="div3">
+      <h4>
+        AKTUELLER STREAM<br />
+        <span id="dyn_project">&#60;STREAM&#62;</span>
+      </h4>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    if (urlParams.get('name')) {
+      $('#dyn_streamer_name').text(urlParams.get('name').toUpperCase());
+    }
+    if (urlParams.get('rank')) {
+      $('#dyn_streamer_rank').text(urlParams.get('rank').toUpperCase());
+    }
+    if (urlParams.get('img')) {
+      $('#dyn_streamer_pic').attr('src', urlParams.get('img'));
+    }
+    if (urlParams.get('stream')) {
+      $('#dyn_project').text(urlParams.get('stream').toUpperCase());
+    }
+
+    var container = $('.div2');
+    var elements = container.find('.social_icon');
+    var currentIndex = 0;
+
+    function loopThroughElements() {
+      elements.eq(currentIndex).addClass('social_active').siblings().removeClass('social_active');
+
+      // Increment index and reset if it's the last element
+      currentIndex = (currentIndex + 1) % elements.length;
+    }
+
+    async function startLoop() {
+      while (true) {
+        elements.addClass('social_show');
+        await delay(15.5 * 1000);
+        elements.removeClass('social_show');
+        loopThroughElements();
+        await delay(8.5 * 1000);
+        elements.removeClass('social_active');
+      }
+    }
+
+    async function performTask() {
+      return new Promise(function (resolve) {
+        loopThroughElements();
+      });
+    }
+
+    async function delay(ms) {
+      return new Promise(function (resolve) {
+        setTimeout(resolve, ms);
+      });
+    }
+
+    startLoop();
+  });
+</script>
