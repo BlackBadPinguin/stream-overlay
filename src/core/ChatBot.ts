@@ -130,6 +130,6 @@ export async function initChatBot(channels: string[]) {
   listener.onUserSocketDisconnect(() => log('INFO', 'socket-connect', 'EventSubWsListener disconnected'));
 
   listener.onChannelFollow(TWITCH_CHANNELS_ID[0], TWITCH_CHANNELS_ID[0], (event) => {
-    io.emit('twitchEvent', 'follow', event.userName);
+    io.emit('twitchEvent', 'follower', event.userName);
   });
 }
