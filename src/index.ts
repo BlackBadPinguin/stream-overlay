@@ -28,11 +28,12 @@ if (MISSING_ENVIRONMENT_VARIABLES.length >= 1) {
   process.exit();
 }
 
-const CLIENT_ID = process.env.CLIENT_ID as string;
-const CLIENT_SECRET = process.env.CLIENT_SECRET as string;
-const TWITCH_CHANNELS = (process.env.TWITCH_CHANNELS as string).split(',');
+export const CLIENT_ID = process.env.CLIENT_ID as string;
+export const CLIENT_SECRET = process.env.CLIENT_SECRET as string;
+export const TWITCH_CHANNELS = (process.env.TWITCH_CHANNELS as string).split(',');
+export const TWITCH_CHANNELS_ID = (process.env.TWITCH_CHANNELS_ID as string).split(',');
 
-console.table({ CLIENT_ID, CLIENT_SECRET, TWITCH_CHANNELS });
+console.table({ CLIENT_ID, CLIENT_SECRET, TWITCH_CHANNELS, TWITCH_CHANNELS_ID });
 
 const app = express();
 const server = http.createServer(app);
