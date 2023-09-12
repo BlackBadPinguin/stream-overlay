@@ -5,6 +5,7 @@ import { Bot, createBotCommand } from '@twurple/easy-bot';
 import { TWITCH_CHANNELS_ID, io } from '..';
 import { ApiClient } from '@twurple/api';
 import { EventSubWsListener } from '@twurple/eventsub-ws';
+import axios from 'axios';
 
 const NotAllowedMsg = 'Das darfst du nicht!';
 
@@ -131,5 +132,39 @@ export async function initChatBot(channels: string[]) {
 
   listener.onChannelFollow(TWITCH_CHANNELS_ID[0], TWITCH_CHANNELS_ID[0], (event) => {
     io.emit('twitchEvent', 'follower', event.userName);
+  });
+
+  listener.onStreamOnline(TWITCH_CHANNELS_ID[0], async (event) => {
+    const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
+    if (!DISCORD_WEBHOOK_URL) return;
+
+    try {
+      const stream = await event.getStream();
+      if (!stream) return;
+      const post = await axios.post(
+        DISCORD_WEBHOOK_URL,
+        {
+          content: `Hey, wir streamen jetzt auch auf Twitch! Schaut gerne vorbei...`,
+          embeds: [
+            {
+              title: stream.title,
+              url: 'https://twitch.com/PanthorDE',
+              color: 16711680,
+              image: {
+                url: stream.getThumbnailUrl(800, 450),
+              },
+            },
+          ],
+          username: 'Twitch - Panthor',
+          avatar_url:
+            'https://static-cdn.jtvnw.net/jtv_user_pictures/87a3eef3-f4f4-4e7f-a8f4-934103145c9c-profile_image-70x70.png',
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    } catch (error) {
+      log('ERROR', 'discord-notification', (error as Error).message);
+    }
   });
 }
