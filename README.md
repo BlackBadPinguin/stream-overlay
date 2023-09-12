@@ -4,6 +4,23 @@
 
 1. Start the application _(as defined under [Getting started](#getting-started))_
 
+### Stream Overlay
+
+> You are able to customize the overlay by providing these query-parameters
+
+```
+https://overlay.tklein.it/static/index.html?name=NAME&rank=RANG&img=BILD&stream=TITLE
+```
+
+|  Param   |        Description        |                                          Example                                           |
+| :------: | :-----------------------: | :----------------------------------------------------------------------------------------: |
+|  `name`  |     Whats your name?      |                                           Bobby                                            |
+|  `rank`  |    Position @ Panthor     |                                         Entwickler                                         |
+|  `img`   | Source URL of your avatar | https://forum.panthor.de/images/avatars/gravatars/d2251755e048516c4b23446f5f7639b1-128.jpg |
+| `stream` |   Current stream title    |                                   Bohrinsel für Bollmann                                   |
+
+### Bot
+
 ## Getting started
 
 1. Clone the repository

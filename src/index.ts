@@ -5,7 +5,8 @@ import http from 'http';
 import { AppConfig } from './app.config';
 import { log, logMiddleware } from './middleware';
 import path from 'path';
-// import { Server } from 'socket.io';
+import { AuthManager, initChatBot } from './core';
+import { Server } from 'socket.io';
 
 /**
  * Check if all required environment-variables are set
@@ -35,38 +36,36 @@ console.table({ CLIENT_ID, CLIENT_SECRET, TWITCH_CHANNELS });
 
 const app = express();
 const server = http.createServer(app);
-// export const io = new Server(server);
+export const io = new Server(server);
 
 app.use(logMiddleware);
 app.use('/static', express.static(path.join(__dirname, '../public')));
 
 app.get('/', async (req, res, next) => {
-  // const code = req.query.code,
-  //   scope = req.query.scope;
-  // if (!code) return res.json({ message: 'code is not provided' });
-  // if (!scope) return res.json({ message: 'scope is not provided' });
+  const code = req.query.code,
+    scope = req.query.scope;
+  if (!code) return res.json({ message: 'code is not provided' });
+  if (!scope) return res.json({ message: 'scope is not provided' });
 
-  // AuthManager.getInstance().setCode(code as string);
-  // log('INFO', 'code', code);
+  AuthManager.getInstance().setCode(code as string);
+  log('INFO', 'code', code);
 
-  // const [accessToken, error] = await AuthManager.getInstance().obtainAccessToken(CLIENT_ID, CLIENT_SECRET);
-  // if (error) {
+  const [accessToken, error] = await AuthManager.getInstance().obtainAccessToken(CLIENT_ID, CLIENT_SECRET);
+  if (error) {
+    log('ERROR', 'access-token', error);
+    return res.json({ message: "Couldn't retrieve an access-token" });
+  }
+  if (!accessToken) return res.json({ message: 'Received an empty access-token' });
+  AuthManager.getInstance().setAccessToken(accessToken);
+  log('INFO', 'access-token', accessToken);
 
-  //     log("ERROR", "access-token", error)
-  //   return res.json({ message: "Couldn't retrieve an access-token" });
-  // }
-  // if (!accessToken) return res.json({ message: 'Received an empty access-token' });
-  // AuthManager.getInstance().setAccessToken(accessToken);
-  // log('INFO', 'access-token', accessToken);
+  const authProvider = AuthManager.getAuthProviderInstance();
+  await authProvider.addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
+  AuthManager.setAuthProviderInstance(authProvider);
 
-  // const authProvider = AuthManager.getAuthProviderInstance();
-  // await authProvider.addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
-  // AuthManager.setAuthProviderInstance(authProvider);
+  initChatBot(TWITCH_CHANNELS);
 
-  // initChatBot(TWITCH_CHANNELS);
-
-  // return res.json({ code, scope });
-  return res.json({ message: 'overlay reachable' });
+  return res.json({ code, scope });
 });
 
 app.get('/login', (req, res, next) => {
@@ -79,6 +78,7 @@ app.get('/login', (req, res, next) => {
   // });
   // https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#authorization-code-grant-flow
   // res.redirect('https://id.twitch.tv/oauth2/authorize?' + query.toString());
+
   res.redirect(
     `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${
       AppConfig.redirectUri

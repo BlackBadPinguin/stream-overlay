@@ -20,7 +20,7 @@ export const AppConfig: AppConfig = {
   environment: determineRuntimeEnvironment(),
   environmentVariables: [],
   // environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNELS', "TWITCH_CHANNELS_ID"],
-  redirectUri: 'http://localhost',
+  redirectUri: determineRuntimeEnvironment() === 'PROD' ? 'https://overlay.tklein.it' : 'http://localhost',
   scopes: [
     'channel:manage:broadcast',
     'channel:manage:polls',
