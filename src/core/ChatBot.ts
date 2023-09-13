@@ -1,17 +1,28 @@
 import { AppConfig } from '../app.config';
-import { log } from '../middleware';
+import { LogCategory, log } from '../middleware';
 import { AuthManager } from './AuthManager';
 import { Bot, createBotCommand } from '@twurple/easy-bot';
 import { TWITCH_CHANNELS_ID, io } from '..';
 import { ApiClient } from '@twurple/api';
 import { EventSubWsListener } from '@twurple/eventsub-ws';
 import axios from 'axios';
+import { getExpiryDateOfAccessToken } from '@twurple/auth';
+import { differenceInHours } from 'date-fns';
 
 const NotAllowedMsg = 'Das darfst du nicht!';
 
 export async function initChatBot(channels: string[]) {
-  // TODO: Prüfe ob es eine AuthProvider Instance gibt
-  // TODO: Prüfe ob es einen gültigen Access-Token gibt
+  let accessToken = AuthManager.getInstance().getAccessToken();
+  const isAccessTokenProvided = accessToken != null;
+  if (!isAccessTokenProvided) {
+    return log('ERROR', LogCategory.AccessToken, 'No access-token provided');
+  }
+
+  if (isAccessTokenProvided && typeof accessToken != 'string') {
+    const accessTokenExpirationTime = getExpiryDateOfAccessToken(accessToken!);
+    const dateInHours = accessTokenExpirationTime ? differenceInHours(new Date(), accessTokenExpirationTime) : 0;
+    if (dateInHours < 12) log('WARN', LogCategory.AccessToken, 'Access-Token expires in ' + accessTokenExpirationTime);
+  }
 
   const AuthProvider = AuthManager.getAuthProviderInstance();
   const apiClient = new ApiClient({ authProvider: AuthProvider });
@@ -89,23 +100,32 @@ export async function initChatBot(channels: string[]) {
     ],
   });
 
-  bot.onConnect(() => log('INFO', 'bot-connection', 'Chatbot connected to chat'));
+  bot.onConnect(() => log('INFO', LogCategory.ChatBot, 'Chatbot connected to chat'));
 
   bot.onDisconnect((manually, reason) => {
     log(
       'INFO',
-      'bot-connection',
+      LogCategory.ChatBot,
       `Chatbot ${manually && 'manually'} disconnected from chat. Reason '${reason ? reason.message : 'UNKNOWN'}'`
     );
+  });
+
+  bot.onAuthenticationSuccess(() => {
+    log('INFO', LogCategory.ChatBot, 'Chatbot authentificated successfully');
+    AuthManager.getInstance().updateBotStatus('bot', { status: 'RUNNING', reason: 'Connected successfully' });
+  });
+
+  bot.onAuthenticationFailure((text, retryCount) => {
+    log('ERROR', LogCategory.ChatBot, `Attempt ${retryCount} of chatbot-authentification failed because of '${text}'`);
+    AuthManager.getInstance().updateBotStatus('bot', { status: 'STOPPED_INVALID_ACCESS_TOKEN', reason: text });
   });
 
   bot.onMessage((event) => {
     const msg = event.text;
     if (msg.substring(0, 1) === AppConfig.prefix) return;
 
-    log('INFO', 'message', event.userName + '::' + msg);
+    log('INFO', LogCategory.ChatMessage, event.userName + '::' + msg);
     io.emit('chatMessage', msg, [false], [event.userDisplayName, false, false, false, false, false]);
-    // io.emit("chatMessage", parsedMSG.join(" "), [msg.isFirst], [userInfo.displayName, userInfo.isBroadcaster, userInfo.isMod, userInfo.isArtist, userInfo.isVip, userInfo.isSubscriber]);
   });
 
   bot.onSub(({ broadcasterName, userName }) => {
@@ -126,9 +146,15 @@ export async function initChatBot(channels: string[]) {
   const listener = new EventSubWsListener({ apiClient });
   listener.start();
 
-  listener.onUserSocketConnect(() => log('INFO', 'socket-connect', 'EventSubWsListener connected'));
+  listener.onUserSocketConnect(() => {
+    AuthManager.getInstance().updateBotStatus('eventListener', { status: 'RUNNING', reason: 'Connected successfully' });
+    log('INFO', LogCategory.WsListener, 'EventSubWsListener connected');
+  });
 
-  listener.onUserSocketDisconnect(() => log('INFO', 'socket-connect', 'EventSubWsListener disconnected'));
+  listener.onUserSocketDisconnect(() => {
+    AuthManager.getInstance().updateBotStatus('eventListener', { status: 'STOPPED', reason: 'Disconnected' });
+    log('INFO', LogCategory.WsListener, 'EventSubWsListener disconnected');
+  });
 
   listener.onChannelFollow(TWITCH_CHANNELS_ID[0], TWITCH_CHANNELS_ID[0], (event) => {
     io.emit('twitchEvent', 'follower', event.userName);
@@ -164,7 +190,7 @@ export async function initChatBot(channels: string[]) {
         }
       );
     } catch (error) {
-      log('ERROR', 'discord-notification', (error as Error).message);
+      log('ERROR', LogCategory.DiscordNotification, (error as Error).message);
     }
   });
 }
