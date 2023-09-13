@@ -3,6 +3,17 @@ import { type NextFunction, type Request, type Response } from 'express';
 
 export type LogType = 'LOG' | 'INFO' | 'WARN' | 'ERROR';
 
+export enum LogCategory {
+  Setup = 'setup',
+  AuthCode = 'auth-code',
+  AccessToken = 'auth-access-token',
+  RefreshingAuthProvider = 'RefreshingAuthProvider',
+  WsListener = 'EventSubWsListener',
+  ChatBot = 'chatbot',
+  ChatMessage = 'message',
+  DiscordNotification = 'discord-notifcation',
+}
+
 export function logMiddleware(req: Request, res: Response, next: NextFunction) {
   if (req.path.includes('favicon') || req.path === '/status') return next();
   res.on('finish', async () => {
@@ -24,7 +35,7 @@ export function logMiddleware(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export function log(type: LogType, category: string | number, message: string | object) {
+export function log(type: LogType, category: LogCategory | string | number, message: string | object) {
   const msg = typeof message == 'string' ? message : JSON.stringify(message);
   const time = new Date().toISOString();
   const section = `(${category})`;

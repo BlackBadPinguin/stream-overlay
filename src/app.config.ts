@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
+import path from 'path';
 
 export type AppConfig = {
   environment: 'PROD' | 'DEV';
@@ -8,6 +9,7 @@ export type AppConfig = {
   scopes: string[];
   port: number;
   prefix?: string;
+  tokensLocation: string;
   overlay: {
     scenes: string[];
     startingScene: AppConfig['overlay']['scenes'][number];
@@ -46,6 +48,7 @@ export const AppConfig: AppConfig = {
   ],
   port: determineRuntimeEnvironment() === 'PROD' ? 8090 : 80,
   prefix: '!',
+  tokensLocation: path.join(__dirname, '../', 'data'), // will create an tokens.json here
   overlay: {
     timerLength: 5000,
     scenes: ['start', 'dev', 'chat', 'pause', 'end'],

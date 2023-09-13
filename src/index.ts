@@ -3,7 +3,7 @@ dotenv.config();
 import express from 'express';
 import http from 'http';
 import { AppConfig } from './app.config';
-import { log, logMiddleware } from './middleware';
+import { LogCategory, log, logMiddleware } from './middleware';
 import path from 'path';
 import { AuthManager, initChatBot } from './core';
 import { Server } from 'socket.io';
@@ -19,7 +19,7 @@ const MISSING_ENVIRONMENT_VARIABLES = AppConfig.environmentVariables.filter((var
 if (MISSING_ENVIRONMENT_VARIABLES.length >= 1) {
   console.log(
     'ERROR',
-    'Starting',
+    LogCategory.Setup,
     JSON.stringify({
       missing: MISSING_ENVIRONMENT_VARIABLES,
       error: 'server/missing-environment-variables',
@@ -42,23 +42,23 @@ export const io = new Server(server);
 app.use(logMiddleware);
 app.use('/static', express.static(path.join(__dirname, '../public')));
 
-app.get('/', async (req, res, next) => {
+app.get('/', async (req, res) => {
   const code = req.query.code,
     scope = req.query.scope;
   if (!code) return res.json({ message: 'code is not provided' });
   if (!scope) return res.json({ message: 'scope is not provided' });
 
   AuthManager.getInstance().setCode(code as string);
-  log('INFO', 'code', code);
+  log('INFO', LogCategory.AuthCode, code);
 
   const [accessToken, error] = await AuthManager.getInstance().obtainAccessToken(CLIENT_ID, CLIENT_SECRET);
   if (error) {
-    log('ERROR', 'access-token', error);
+    log('ERROR', LogCategory.AccessToken, error);
     return res.json({ message: "Couldn't retrieve an access-token" });
   }
   if (!accessToken) return res.json({ message: 'Received an empty access-token' });
   AuthManager.getInstance().setAccessToken(accessToken);
-  log('INFO', 'access-token', accessToken);
+  log('INFO', LogCategory.AccessToken, accessToken);
 
   const authProvider = AuthManager.getAuthProviderInstance();
   await authProvider.addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
@@ -69,17 +69,8 @@ app.get('/', async (req, res, next) => {
   return res.json({ code, scope });
 });
 
-app.get('/login', (req, res, next) => {
-  // const query = new URLSearchParams({
-  //   client_id: CLIENT_ID,
-  //   redirect_uri: AppConfig.redirectUri,
-  //   response_type: 'code', // code, token
-  //   scope: AppConfig.scopes.join('+'),
-  //   force_verify: 'true',
-  // });
+app.get('/auth/login', (req, res) => {
   // https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#authorization-code-grant-flow
-  // res.redirect('https://id.twitch.tv/oauth2/authorize?' + query.toString());
-
   res.redirect(
     `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${
       AppConfig.redirectUri
@@ -87,6 +78,44 @@ app.get('/login', (req, res, next) => {
   );
 });
 
-server.listen(AppConfig.port, async () => {
-  log('INFO', 'starting', 'Server listening on localhost:' + AppConfig.port);
+app.post('/auth/token', (req, res) => {
+  try {
+    const accessToken = req.body.token;
+    if (accessToken && AuthManager.isValidAccessToken(accessToken)) {
+      AuthManager.getInstance().setAccessToken(accessToken);
+      return res.status(200).json({ message: 'Access-Token updated' });
+    } else return res.status(403).json({ message: 'Invalid Access-Token provided' });
+  } catch (error) {
+    return res.status(500).json({ error });
+  }
 });
+
+if (process.env.BOT_INIT_PASSWORD) {
+  app.get('/bot/init', async (req, res) => {
+    const pwd = req.query.password;
+    if (!pwd) {
+      return res.json({ message: "Provide an 'password' query-parameter" });
+    }
+
+    if (pwd !== process.env.BOT_INIT_PASSWORD) {
+      return res.json({ message: 'Provided password is invalid' });
+    }
+
+    initChatBot(TWITCH_CHANNELS);
+    await sleep(1000);
+    res.redirect('/bot/status');
+  });
+}
+
+app.get('/bot/status', (req, res) => {
+  const botStatus = AuthManager.getInstance().getBotStatus();
+  return res
+    .status(Object.entries(botStatus).some(([_, statusObj]) => statusObj.status !== 'RUNNING') ? 500 : 200)
+    .json(botStatus);
+});
+
+server.listen(AppConfig.port, async () => {
+  log('INFO', LogCategory.Setup, 'Server listening on localhost:' + AppConfig.port);
+});
+
+const sleep = (time = 1000) => new Promise((res) => setTimeout(() => res, time));

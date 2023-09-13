@@ -59,7 +59,7 @@
       const socket = io();
 
       function playAudio(path, volume = 0.9) {
-        var audio = new Audio('/' + path);
+        var audio = new Audio(path);
         audio.volume = volume;
         audio.play();
       }
