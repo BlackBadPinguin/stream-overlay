@@ -52,7 +52,7 @@ export async function initChatBot(channels: string[]) {
         io.emit(
           'update',
           'hint',
-          params.length > 0 ? ['custom', '', params.join(' '), 'fa-solid fa-fa-fire'] : ['none', '', '', '']
+          params.length > 0 ? ['custom', '', params.join(' '), 'fa-solid fa-fire'] : ['none', '', '', '']
         );
       }),
       createBotCommand('topic', (params, { msg, reply, say }) => {
