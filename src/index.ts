@@ -7,6 +7,7 @@ import { LogCategory, log, logMiddleware } from './middleware';
 import path from 'path';
 import { AuthManager, initChatBot } from './core';
 import { Server } from 'socket.io';
+import fs from 'fs';
 
 /**
  * Check if all required environment-variables are set
@@ -30,10 +31,12 @@ if (MISSING_ENVIRONMENT_VARIABLES.length >= 1) {
 
 export const CLIENT_ID = process.env.CLIENT_ID as string;
 export const CLIENT_SECRET = process.env.CLIENT_SECRET as string;
-export const TWITCH_CHANNELS = (process.env.TWITCH_CHANNELS as string).split(',');
-export const TWITCH_CHANNELS_ID = (process.env.TWITCH_CHANNELS_ID as string).split(',');
+export const TWITCH_CHANNEL = process.env.TWITCH_CHANNEL as string;
+export const TWITCH_CHANNEL_ID = process.env.TWITCH_CHANNEL_ID as string;
 
-console.table({ CLIENT_ID, CLIENT_SECRET, TWITCH_CHANNELS, TWITCH_CHANNELS_ID });
+console.table({ CLIENT_ID, CLIENT_SECRET, TWITCH_CHANNELS: TWITCH_CHANNEL, TWITCH_CHANNELS_ID: TWITCH_CHANNEL_ID });
+
+console.log('data folder exists', fs.existsSync(path.join(__dirname, '../', 'data')));
 
 const app = express();
 const server = http.createServer(app);
@@ -64,7 +67,7 @@ app.get('/', async (req, res) => {
   await authProvider.addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
   AuthManager.setAuthProviderInstance(authProvider);
 
-  initChatBot(TWITCH_CHANNELS);
+  initChatBot(TWITCH_CHANNEL);
 
   return res.json({ code, scope });
 });
@@ -101,7 +104,7 @@ if (process.env.BOT_INIT_PASSWORD) {
       return res.json({ message: 'Provided password is invalid' });
     }
 
-    initChatBot(TWITCH_CHANNELS);
+    initChatBot(TWITCH_CHANNEL);
     await sleep(1000);
     res.redirect('/bot/status');
   });

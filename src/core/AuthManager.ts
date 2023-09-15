@@ -2,17 +2,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { AppConfig } from '../app.config';
 import type { DataWithError } from '../types';
-import { RefreshingAuthProvider, type AccessToken, exchangeCode } from '@twurple/auth';
+import { RefreshingAuthProvider, type AccessToken, exchangeCode, getExpiryDateOfAccessToken } from '@twurple/auth';
 import { LogCategory, log } from '../middleware';
 import path from 'path';
 import fs from 'fs';
-import { TWITCH_CHANNELS_ID } from '..';
+import { TWITCH_CHANNEL_ID } from '..';
+import { format } from 'date-fns';
 
 export type ServiceRunningStatus = 'RUNNING' | 'STOPPED' | 'STOPPED_NO_ACCESS_TOKEN' | 'STOPPED_INVALID_ACCESS_TOKEN';
 
 export type ServiceStatus = { status: ServiceRunningStatus; reason: string | null };
 
-export type TokensFile = Record<string, { current: AccessToken | string | null; previous: (AccessToken | string)[] }>;
+export type TokensFile = { current: AccessToken | string | null; previous: (AccessToken | string)[] };
 
 export class AuthManager {
   private static instance = new AuthManager();
@@ -30,12 +31,10 @@ export class AuthManager {
     const { exists } = this.tokensFileExist();
     console.log(exists);
     if (exists) {
-      if (!process.env.TWITCH_CHANNELS_ID || !TWITCH_CHANNELS_ID || TWITCH_CHANNELS_ID.length === 0) return;
-      const userId = TWITCH_CHANNELS_ID[0];
-      const userTokensFileContent = this.getTokensFileByUserId(userId);
-      if (userTokensFileContent?.current) {
-        console.log('setting token');
-        this.setAccessToken(userTokensFileContent.current, false);
+      if (!process.env.TWITCH_CHANNELS_ID || !TWITCH_CHANNEL_ID || TWITCH_CHANNEL_ID.length === 0) return;
+      const currentFilesContent = this.getTokensFile();
+      if (currentFilesContent && currentFilesContent.current) {
+        this.setAccessToken(currentFilesContent.current, false);
       }
     }
   }
@@ -51,6 +50,17 @@ export class AuthManager {
   public getCode() {
     return this.code;
   }
+  public getBotStatus() {
+    return this.botStatus;
+  }
+
+  public setBotStatus(status: ReturnType<typeof this.getBotStatus>) {
+    this.botStatus = status;
+  }
+
+  public updateBotStatus(service: 'bot' | 'eventListener', status: ServiceStatus) {
+    this.botStatus[service] = status;
+  }
 
   public setAccessToken(accessToken: AccessToken | string, writeToFile = true) {
     try {
@@ -59,35 +69,36 @@ export class AuthManager {
         file: { path },
       } = this.tokensFileExist();
       const tokensFile = this.getTokensFile();
-      const userId = TWITCH_CHANNELS_ID[0];
       if (writeToFile) {
         if (!exists) {
           const data: TokensFile = {
-            [userId]: {
-              current: accessToken,
-              previous: [],
-            },
+            current: accessToken,
+            previous: [],
           };
           fs.writeFileSync(path, JSON.stringify(data), { encoding: 'utf8' });
         } else {
           const currentTokensFileContent = tokensFile as TokensFile;
-          const userTokensFileContent = this.getTokensFileByUserId(userId);
-          let updatedTokenHistory: (AccessToken | string)[] =
-            userTokensFileContent !== null ? [...userTokensFileContent.previous] : [];
-          if (userTokensFileContent?.current)
-            updatedTokenHistory = [userTokensFileContent.current, ...updatedTokenHistory];
+          let updatedTokenHistory = currentTokensFileContent.previous;
+          if (currentTokensFileContent.current) updatedTokenHistory.push(currentTokensFileContent.current);
           const updatedData: TokensFile = {
-            ...currentTokensFileContent,
-            [userId]: {
-              current: accessToken,
-              previous: updatedTokenHistory,
-            },
+            current: accessToken,
+            previous: updatedTokenHistory,
           };
           fs.writeFileSync(path, JSON.stringify(updatedData), { encoding: 'utf8' });
         }
       }
     } catch (error) {
       log('ERROR', LogCategory.AccessToken, error as Error);
+    }
+
+    if (typeof accessToken !== 'string') {
+      const expireDate = getExpiryDateOfAccessToken(accessToken);
+      if (!expireDate) return;
+      log(
+        'INFO',
+        LogCategory.AccessToken,
+        'New access-token is valid until ' + format(expireDate, 'dd.MM.yy HH:mm:ss')
+      );
     }
 
     this.accessToken = accessToken;
@@ -135,23 +146,6 @@ export class AuthManager {
     }
   }
 
-  public getTokensFileByUserId(userId: string) {
-    try {
-      const fileData = this.getTokensFile();
-      if (!fileData) return null;
-
-      const containsTokenForUserId = Object.keys(fileData).some((key) => key === userId);
-      if (!containsTokenForUserId) return null;
-
-      const userTokens = fileData[userId];
-      console.log('getTokensFileByUserId', userTokens);
-      return userTokens;
-    } catch (error) {
-      log('ERROR', LogCategory.AccessToken, error as Error);
-      return null;
-    }
-  }
-
   public getAccessToken() {
     return this.accessToken;
   }
@@ -169,7 +163,7 @@ export class AuthManager {
         redirectUri: AppConfig.redirectUri,
       });
 
-      rap.onRefreshFailure(([userId, newToken]) => {
+      rap.onRefresh(([userId, newToken]) => {
         log('INFO', LogCategory.RefreshingAuthProvider, 'Refresh token for ' + userId + ' was refreshed');
         AuthManager.getInstance().setAccessToken(newToken);
       });
@@ -221,17 +215,5 @@ export class AuthManager {
     } catch (error) {
       return [null, error as Error];
     }
-  }
-
-  public getBotStatus() {
-    return this.botStatus;
-  }
-
-  public setBotStatus(status: ReturnType<typeof this.getBotStatus>) {
-    this.botStatus = status;
-  }
-
-  public updateBotStatus(service: 'bot' | 'eventListener', status: ServiceStatus) {
-    this.botStatus[service] = status;
   }
 }

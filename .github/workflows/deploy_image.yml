@@ -36,4 +36,4 @@ jobs:
             if not docker volume inspect my-volume; then
               docker volume create stream-overlay-data
             fi
-            docker run -itd -v stream-overlay-data:/data --env-file '${{ vars.SERVER_ENV_FILE_LOCATION }}' --restart on-failure:3 -p '8090:8090' --name=$CONTAINER_NAME ${{ env.IMAGE_NAME }}:latest
+            docker run -itd -v stream-overlay-data:/app/stream-overlay/data --env-file '${{ vars.SERVER_ENV_FILE_LOCATION }}' --restart on-failure:3 -p '8090:8090' --name=$CONTAINER_NAME ${{ env.IMAGE_NAME }}:latest

@@ -2,16 +2,14 @@ import { AppConfig } from '../app.config';
 import { LogCategory, log } from '../middleware';
 import { AuthManager } from './AuthManager';
 import { Bot, createBotCommand } from '@twurple/easy-bot';
-import { TWITCH_CHANNELS_ID, io } from '..';
+import { TWITCH_CHANNEL_ID, io } from '..';
 import { ApiClient } from '@twurple/api';
 import { EventSubWsListener } from '@twurple/eventsub-ws';
 import axios from 'axios';
 import { getExpiryDateOfAccessToken } from '@twurple/auth';
 import { differenceInHours } from 'date-fns';
 
-const NotAllowedMsg = 'Das darfst du nicht!';
-
-export async function initChatBot(channels: string[]) {
+export async function initChatBot(channel: string) {
   let accessToken = AuthManager.getInstance().getAccessToken();
   const isAccessTokenProvided = accessToken != null;
   if (!isAccessTokenProvided) {
@@ -29,8 +27,8 @@ export async function initChatBot(channels: string[]) {
   const bot = new Bot({
     debug: AppConfig.environment == 'DEV',
     authProvider: AuthProvider,
-    channels: channels,
-    prefix: AppConfig.prefix,
+    channel: channel,
+    prefix: AppConfig.chatBot.prefix,
     commands: [
       createBotCommand('dice', (params, { reply }) => {
         const diceRoll = Math.floor(Math.random() * 6) + 1;
@@ -45,7 +43,7 @@ export async function initChatBot(channels: string[]) {
       createBotCommand('hint', (params, { msg, say, reply }) => {
         const userInfo = msg.userInfo;
         if (!userInfo.isMod && !userInfo.isBroadcaster) {
-          return reply(NotAllowedMsg);
+          return reply(AppConfig.chatBot.messages.noPermission);
         }
 
         reply(`Hinweis ${params.length > 0 ? 'geändert' : 'gelöscht'}!`);
@@ -58,7 +56,7 @@ export async function initChatBot(channels: string[]) {
       createBotCommand('topic', (params, { msg, reply, say }) => {
         const userInfo = msg.userInfo;
         if (!userInfo.isMod && !userInfo.isBroadcaster) {
-          return reply(NotAllowedMsg);
+          return reply(AppConfig.chatBot.messages.noPermission);
         }
 
         if (params.length === 0) {
@@ -72,7 +70,7 @@ export async function initChatBot(channels: string[]) {
       createBotCommand('timer', (params, { msg, reply, say }) => {
         const userInfo = msg.userInfo;
         if (!userInfo.isMod && !userInfo.isBroadcaster) {
-          return reply(NotAllowedMsg);
+          return reply(AppConfig.chatBot.messages.noPermission);
         }
 
         if (params.length === 0) {
@@ -86,11 +84,13 @@ export async function initChatBot(channels: string[]) {
       createBotCommand('scene', (params, { msg, reply, say }) => {
         const userInfo = msg.userInfo;
         if (!userInfo.isMod && !userInfo.isBroadcaster) {
-          return reply(NotAllowedMsg);
+          return reply(AppConfig.chatBot.messages.noPermission);
         }
 
         if (params.length === 0 || !AppConfig.overlay.scenes.some((scene) => scene === params[0].toLowerCase())) {
-          return reply(`Ungültiger Syntax. Versuche scene [${AppConfig.overlay.scenes.join('|')}]`);
+          return reply(
+            `Ungültiger Syntax. Versuche ${AppConfig.chatBot.prefix}scene [${AppConfig.overlay.scenes.join('|')}]`
+          );
         }
 
         const scene = params[0].toLowerCase();
@@ -122,7 +122,7 @@ export async function initChatBot(channels: string[]) {
 
   bot.onMessage((event) => {
     const msg = event.text;
-    if (msg.substring(0, 1) === AppConfig.prefix) return;
+    if (msg.substring(0, 1) === AppConfig.chatBot.prefix) return;
 
     log('INFO', LogCategory.ChatMessage, event.userName + '::' + msg);
     io.emit('chatMessage', msg, [false], [event.userDisplayName, false, false, false, false, false]);
@@ -156,11 +156,11 @@ export async function initChatBot(channels: string[]) {
     log('INFO', LogCategory.WsListener, 'EventSubWsListener disconnected');
   });
 
-  listener.onChannelFollow(TWITCH_CHANNELS_ID[0], TWITCH_CHANNELS_ID[0], (event) => {
+  listener.onChannelFollow(TWITCH_CHANNEL_ID, TWITCH_CHANNEL_ID, (event) => {
     io.emit('twitchEvent', 'follower', event.userName);
   });
 
-  listener.onStreamOnline(TWITCH_CHANNELS_ID[0], async (event) => {
+  listener.onStreamOnline(TWITCH_CHANNEL_ID, async (event) => {
     const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
     if (!DISCORD_WEBHOOK_URL) return;
 
