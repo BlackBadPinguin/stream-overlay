@@ -4,6 +4,16 @@
 
 ## Features
 
+|                           Feature                           |                                                                                                                               Beschreibung                                                                                                                                |
+| :---------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| _Mit Twitch anmelden (erstmaligen Access-Token generieren)_ |                                                                                                        Endpunkt `/auth/login` aufrufen und mittels Twich anmelden                                                                                                         |
+|                 _Status manuell überprüfen_                 |                                                                                                                      Endpunkt `/bot/status` aufrufen                                                                                                                      |
+|             _(Manuell) Access-Token speichern_              |                                                                                                                                                                                                                                                                           |
+|                        _Bot starten_                        | Endpunkt `/bot/init` aufrufen <br />(Setzt voraus dass ein gültiger Access-Token vorhanden ist. Um diesen Endpunkt zu erreichen muss die Umgebungsvariable `BOT_INIT_PASSWORD` gesetzt sein und mittels dem Query-Parameter `password` an den Endpunkt mitgegeben werden) |
+|                            _ff_                             |                                                                                                                                                                                                                                                                           |
+|                            _ff_                             |                                                                                                                                                                                                                                                                           |
+|                            _ff_                             |                                                                                                                                                                                                                                                                           |
+
 - Anmelden mittels Twitch
 
   _Mittels Twitch anmelden und einen Access-Token abrufne_
@@ -26,8 +36,6 @@
   |  `rank`  |    Position @ Panthor     |             Entwickler             |
   |  `img`   | Source URL of your avatar | https://...b23446f5f7639b1-128.jpg |
   | `stream` |   Current stream title    |       Bohrinsel für Bollmann       |
-
-### Bot
 
 ## Getting started
 
@@ -64,10 +72,14 @@
 2. Start an container
 
    ```bash
-   docker run -itd --env-file '.env' --restart on-failure:3 -p '8090:80' --name=stream-overlay docker pull ghcr.io/tklein1801/stream-overlay:latest
+   docker run -itd -v test-volume:/app/stream-overlay/data --env-file '.env' --restart on-failure:3 -p '8090:80' --name=stream-overlay docker pull ghcr.io/tklein1801/stream-overlay:latest
    ```
 
 ## Workflows
+
+> Make sure that **the user** which executes the workflow **has permissions** to **manage docker volumes and docker containers**
+
+> The provided Github Personal Access Token need to have permission to read and write to the Github Package Registry
 
 ### Publish Docker Image
 

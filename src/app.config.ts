@@ -8,19 +8,24 @@ export type AppConfig = {
   redirectUri: string;
   scopes: string[];
   port: number;
-  prefix?: string;
   tokensLocation: string;
   overlay: {
     scenes: string[];
     startingScene: AppConfig['overlay']['scenes'][number];
     timerLength: number;
   };
+  chatBot: {
+    prefix: string;
+    messages: {
+      noPermission: string;
+    };
+  };
 };
 
 export const AppConfig: AppConfig = {
   // TODO: Convert into branded type
   environment: determineRuntimeEnvironment(),
-  environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNELS', 'TWITCH_CHANNELS_ID'],
+  environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNEL', 'TWITCH_CHANNEL_ID'],
   redirectUri: determineRuntimeEnvironment() === 'PROD' ? 'https://overlay.tklein.it' : 'http://localhost',
   scopes: [
     'channel:manage:broadcast',
@@ -47,12 +52,17 @@ export const AppConfig: AppConfig = {
     'moderator:read:shoutouts',
   ],
   port: determineRuntimeEnvironment() === 'PROD' ? 8090 : 80,
-  prefix: '!',
   tokensLocation: path.join(__dirname, '../', 'data'), // will create an tokens.json here
   overlay: {
     timerLength: 5000,
     scenes: ['start', 'dev', 'chat', 'pause', 'end'],
     startingScene: 'start',
+  },
+  chatBot: {
+    prefix: '!',
+    messages: {
+      noPermission: 'Da!',
+    },
   },
 };
 
