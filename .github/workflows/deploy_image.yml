@@ -14,6 +14,9 @@ jobs:
   renew_docker_compose:
     name: Rebuild Remote Docker-Compose
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://overlay.tklein.it
     steps:
       - name: Connect and deploy
         uses: appleboy/ssh-action@master
@@ -33,7 +36,7 @@ jobs:
               docker rmi "${{ env.IMAGE_NAME }}:latest"
             fi
             docker pull ${{ env.IMAGE_NAME }}:latest
-            if not docker volume inspect my-volume; then
+            if not docker volume inspect stream-overlay-data; then
               docker volume create stream-overlay-data
             fi
             docker run -itd -v stream-overlay-data:/app/stream-overlay/data --env-file '${{ vars.SERVER_ENV_FILE_LOCATION }}' --restart on-failure:3 -p '8090:8090' --name=$CONTAINER_NAME ${{ env.IMAGE_NAME }}:latest
