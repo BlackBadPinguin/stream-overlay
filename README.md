@@ -2,40 +2,13 @@
 
 [![Status](https://status.tklein.it/api/badge/15/status?style=for-the-badge)]() [![Uptime](https://status.tklein.it/api/badge/15/uptime?style=for-the-badge)]()
 
-## Features
+## ToC
 
-|                           Feature                           |                                                                                                                               Beschreibung                                                                                                                                |
-| :---------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| _Mit Twitch anmelden (erstmaligen Access-Token generieren)_ |                                                                                                        Endpunkt `/auth/login` aufrufen und mittels Twich anmelden                                                                                                         |
-|                 _Status manuell überprüfen_                 |                                                                                                                      Endpunkt `/bot/status` aufrufen                                                                                                                      |
-|             _(Manuell) Access-Token speichern_              |                                                                                                                                                                                                                                                                           |
-|                        _Bot starten_                        | Endpunkt `/bot/init` aufrufen <br />(Setzt voraus dass ein gültiger Access-Token vorhanden ist. Um diesen Endpunkt zu erreichen muss die Umgebungsvariable `BOT_INIT_PASSWORD` gesetzt sein und mittels dem Query-Parameter `password` an den Endpunkt mitgegeben werden) |
-|                            _ff_                             |                                                                                                                                                                                                                                                                           |
-|                            _ff_                             |                                                                                                                                                                                                                                                                           |
-|                            _ff_                             |                                                                                                                                                                                                                                                                           |
-
-- Anmelden mittels Twitch
-
-  _Mittels Twitch anmelden und einen Access-Token abrufne_
-
-- Statusendpunkt
-
-  _Erreichbar unter `/bot/status`_
-
-- Dynamisches Stream-Overlay
-
-  > You are able to customize the overlay by providing these query-parameters
-
-  ```
-  https://overlay.tklein.it/static/index.html?...
-  ```
-
-  |  Param   |        Description        |              Example               |
-  | :------: | :-----------------------: | :--------------------------------: |
-  |  `name`  |     Whats your name?      |               Bobby                |
-  |  `rank`  |    Position @ Panthor     |             Entwickler             |
-  |  `img`   | Source URL of your avatar | https://...b23446f5f7639b1-128.jpg |
-  | `stream` |   Current stream title    |       Bohrinsel für Bollmann       |
+- [Features](#features)
+- [Getting started](#getting-started)
+- [Docker](#docker)
+- [Workflow](#workflows)
+- [FaQ](#faq)
 
 ## Getting started
 
@@ -90,9 +63,62 @@
 
 ### Deploy Image
 
-|    Secrets     |         Variables          |
-| :------------: | :------------------------: |
-|   `SSH_HOST`   |        `IMAGE_NAME`        |
-|   `SSH_USER`   |       `DOCKER_USER`        |
-| `SSH_PASSWORD` |      `CONTAINER_NAME`      |
-|    `GH_PAT`    | `SERVER_ENV_FILE_LOCATION` |
+> Variables marked with `ENV-PROD` are defined in the enviroment `production`
+
+|          Secrets          |              Variables               |
+| :-----------------------: | :----------------------------------: |
+|   `SSH_HOST` (ENV-PROD)   |             `IMAGE_NAME`             |
+|   `SSH_USER` (ENV-PROD)   |            `DOCKER_USER`             |
+| `SSH_PASSWORD` (ENV-PROD) |     `CONTAINER_NAME` (ENV-PROD)      |
+|         `GH_PAT`          | `SERVER_ENV_FILE_LOCATION`(ENV-PROD) |
+
+## FaQ
+
+<details>
+  <summary><strong>Sign in with Twitch</strong></summary>
+
+- Visit `/auth/login` and sign in with your Twitch account (prefered PanthorDE)
+
+</details>
+
+<details>
+  <summary><strong>Save access-token</strong></summary>
+
+- Send a request to `POST /auth/token` with the following payload
+
+```
+{
+  "token": <TOKEN> // string or object
+}
+```
+
+</details>
+
+<details>
+  <summary><strong>Start Bot/Event-Listener</strong></summary>
+
+> Sign in with Twitch beforehand or save a valid access token
+
+> The endpoint is only reachable if the environment variable `BOT_INIT_PASSWORD` is set. The value of the variable must be specified as the query parameter `password`.
+
+- Call the endpoint `/bot/init` and wait about 2 seconds
+
+</details>
+
+<details>
+  <summary><strong>Overlay</strong></summary>
+
+> You are able to customize the overlay by providing these query parameters
+
+```
+https://overlay.tklein.it/static/index.html?...
+```
+
+|  Param   |        Description        |              Example               |
+| :------: | :-----------------------: | :--------------------------------: |
+|  `name`  |     Whats your name?      |               Bobby                |
+|  `rank`  |    Position @ Panthor     |             Entwickler             |
+|  `img`   | Source URL of your avatar | https://...b23446f5f7639b1-128.jpg |
+| `stream` |   Current stream title    |       Bohrinsel für Bollmann       |
+
+</details>
