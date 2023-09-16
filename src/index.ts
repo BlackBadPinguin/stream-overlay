@@ -5,9 +5,8 @@ import http from 'http';
 import { AppConfig } from './app.config';
 import { LogCategory, log, logMiddleware } from './middleware';
 import path from 'path';
-import { AuthManager, initChatBot } from './core';
+import { AuthManager, initChatBot, initEventListener } from './core';
 import { Server } from 'socket.io';
-import fs from 'fs';
 
 /**
  * Check if all required environment-variables are set
@@ -18,7 +17,7 @@ const MISSING_ENVIRONMENT_VARIABLES = AppConfig.environmentVariables.filter((var
   }
 });
 if (MISSING_ENVIRONMENT_VARIABLES.length >= 1) {
-  console.log(
+  log(
     'ERROR',
     LogCategory.Setup,
     JSON.stringify({
@@ -35,8 +34,6 @@ export const TWITCH_CHANNEL = process.env.TWITCH_CHANNEL as string;
 export const TWITCH_CHANNEL_ID = process.env.TWITCH_CHANNEL_ID as string;
 
 console.table({ CLIENT_ID, CLIENT_SECRET, TWITCH_CHANNELS: TWITCH_CHANNEL, TWITCH_CHANNELS_ID: TWITCH_CHANNEL_ID });
-
-console.log('data folder exists', fs.existsSync(path.join(__dirname, '../', 'data')));
 
 const app = express();
 const server = http.createServer(app);
@@ -63,12 +60,6 @@ app.get('/', async (req, res) => {
   AuthManager.getInstance().setAccessToken(accessToken);
   log('INFO', LogCategory.AccessToken, accessToken);
 
-  const authProvider = AuthManager.getAuthProviderInstance();
-  await authProvider.addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
-  AuthManager.setAuthProviderInstance(authProvider);
-
-  initChatBot(TWITCH_CHANNEL);
-
   return res.json({ code, scope });
 });
 
@@ -93,22 +84,44 @@ app.post('/auth/token', (req, res) => {
   }
 });
 
-if (process.env.BOT_INIT_PASSWORD) {
-  app.get('/bot/init', async (req, res) => {
-    const pwd = req.query.password;
-    if (!pwd) {
-      return res.json({ message: "Provide an 'password' query-parameter" });
+app.get('/bot/init', async (req, res) => {
+  if (!process.env.BOT_INIT_PASSWORD) {
+    return res.json({ message: 'This endpoint is disabled' });
+  }
+  const pwd = req.query.password;
+  if (!pwd) {
+    return res.json({ message: "Provide an 'password' query-parameter" });
+  }
+
+  if (pwd !== process.env.BOT_INIT_PASSWORD) {
+    return res.json({ message: 'Provided password is invalid' });
+  }
+
+  try {
+    const status = AuthManager.getInstance().getBotStatus();
+    let startedServices: string[] = [];
+
+    if (status.bot.status !== 'RUNNING') {
+      startedServices.push('Chatbot');
+      await initChatBot(TWITCH_CHANNEL);
     }
 
-    if (pwd !== process.env.BOT_INIT_PASSWORD) {
-      return res.json({ message: 'Provided password is invalid' });
+    if (status.eventListener.status !== 'RUNNING') {
+      startedServices.push('Event-listener');
+      await initEventListener();
     }
 
-    initChatBot(TWITCH_CHANNEL);
-    await sleep(1000);
-    res.redirect('/bot/status');
-  });
-}
+    if (startedServices.length === 0) {
+      return res.json({ message: 'All services are already running' });
+    } else {
+      await sleep(500);
+      res.redirect('/bot/status');
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: (error as Error).message });
+  }
+});
 
 app.get('/bot/status', (req, res) => {
   const botStatus = AuthManager.getInstance().getBotStatus();

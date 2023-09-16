@@ -1,29 +1,39 @@
+import { differenceInHours } from 'date-fns';
+import { Bot, createBotCommand } from '@twurple/easy-bot';
+import { getExpiryDateOfAccessToken } from '@twurple/auth';
 import { AppConfig } from '../app.config';
 import { LogCategory, log } from '../middleware';
 import { AuthManager } from './AuthManager';
-import { Bot, createBotCommand } from '@twurple/easy-bot';
 import { TWITCH_CHANNEL_ID, io } from '..';
-import { ApiClient } from '@twurple/api';
-import { EventSubWsListener } from '@twurple/eventsub-ws';
-import axios from 'axios';
-import { getExpiryDateOfAccessToken } from '@twurple/auth';
-import { differenceInHours } from 'date-fns';
 
 export async function initChatBot(channel: string) {
-  let accessToken = AuthManager.getInstance().getAccessToken();
-  const isAccessTokenProvided = accessToken != null;
-  if (!isAccessTokenProvided) {
-    return log('ERROR', LogCategory.AccessToken, 'No access-token provided');
+  console.log('A');
+  if (AuthManager.getInstance().getBotStatus().bot.status === 'RUNNING') {
+    log('WARN', LogCategory.ChatBot, "Chatbot is already running and can't get initialized twice");
+    return;
   }
 
+  console.log('B');
+  const accessToken = AuthManager.getInstance().getAccessToken();
+  const isAccessTokenProvided = accessToken != null;
+  if (!isAccessTokenProvided) {
+    log('ERROR', LogCategory.AccessToken, 'No access-token provided');
+    return;
+  }
+
+  console.log('C');
   if (isAccessTokenProvided && typeof accessToken != 'string') {
     const accessTokenExpirationTime = getExpiryDateOfAccessToken(accessToken!);
     const dateInHours = accessTokenExpirationTime ? differenceInHours(new Date(), accessTokenExpirationTime) : 0;
     if (dateInHours < 12) log('WARN', LogCategory.AccessToken, 'Access-Token expires in ' + accessTokenExpirationTime);
   }
 
+  console.log('D');
   const AuthProvider = AuthManager.getAuthProviderInstance();
-  const apiClient = new ApiClient({ authProvider: AuthProvider });
+  if (!AuthProvider.hasUser(TWITCH_CHANNEL_ID)) {
+    await AuthManager.getInstance().addAuthProviderUser();
+  }
+
   const bot = new Bot({
     debug: AppConfig.environment == 'DEV',
     authProvider: AuthProvider,
@@ -141,56 +151,5 @@ export async function initChatBot(channel: string) {
   bot.onSubGift(({ broadcasterName, gifterName, userName }) => {
     bot.say(broadcasterName, `Danke @${gifterName} für das verschenken eines Abos an @${userName}!`);
     io.emit('twitchEvent', 'gift-sub', userName);
-  });
-
-  const listener = new EventSubWsListener({ apiClient });
-  listener.start();
-
-  listener.onUserSocketConnect(() => {
-    AuthManager.getInstance().updateBotStatus('eventListener', { status: 'RUNNING', reason: 'Connected successfully' });
-    log('INFO', LogCategory.WsListener, 'EventSubWsListener connected');
-  });
-
-  listener.onUserSocketDisconnect(() => {
-    AuthManager.getInstance().updateBotStatus('eventListener', { status: 'STOPPED', reason: 'Disconnected' });
-    log('INFO', LogCategory.WsListener, 'EventSubWsListener disconnected');
-  });
-
-  listener.onChannelFollow(TWITCH_CHANNEL_ID, TWITCH_CHANNEL_ID, (event) => {
-    io.emit('twitchEvent', 'follower', event.userName);
-  });
-
-  listener.onStreamOnline(TWITCH_CHANNEL_ID, async (event) => {
-    const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-    if (!DISCORD_WEBHOOK_URL) return;
-
-    try {
-      const stream = await event.getStream();
-      if (!stream) return;
-      const post = await axios.post(
-        DISCORD_WEBHOOK_URL,
-        {
-          content: `Hey, wir streamen jetzt auch auf Twitch! Schaut gerne vorbei...`,
-          embeds: [
-            {
-              title: stream.title,
-              url: 'https://twitch.com/PanthorDE',
-              color: 16711680,
-              image: {
-                url: stream.getThumbnailUrl(800, 450),
-              },
-            },
-          ],
-          username: 'Twitch - Panthor',
-          avatar_url:
-            'https://static-cdn.jtvnw.net/jtv_user_pictures/87a3eef3-f4f4-4e7f-a8f4-934103145c9c-profile_image-70x70.png',
-        },
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    } catch (error) {
-      log('ERROR', LogCategory.DiscordNotification, (error as Error).message);
-    }
   });
 }

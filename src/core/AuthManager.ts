@@ -6,7 +6,6 @@ import { RefreshingAuthProvider, type AccessToken, exchangeCode, getExpiryDateOf
 import { LogCategory, log } from '../middleware';
 import path from 'path';
 import fs from 'fs';
-import { TWITCH_CHANNEL_ID } from '..';
 import { format } from 'date-fns';
 
 export type ServiceRunningStatus = 'RUNNING' | 'STOPPED' | 'STOPPED_NO_ACCESS_TOKEN' | 'STOPPED_INVALID_ACCESS_TOKEN';
@@ -29,13 +28,11 @@ export class AuthManager {
 
   constructor() {
     const { exists } = this.tokensFileExist();
-    console.log(exists);
-    if (exists) {
-      if (!process.env.TWITCH_CHANNELS_ID || !TWITCH_CHANNEL_ID || TWITCH_CHANNEL_ID.length === 0) return;
-      const currentFilesContent = this.getTokensFile();
-      if (currentFilesContent && currentFilesContent.current) {
-        this.setAccessToken(currentFilesContent.current, false);
-      }
+    if (!exists) return;
+    const currentFilesContent = this.getTokensFile();
+    if (currentFilesContent && currentFilesContent.current) {
+      log('INFO', LogCategory.AccessToken, 'Retrieving access-token from local tokens.json');
+      this.setAccessToken(currentFilesContent.current, false);
     }
   }
 
@@ -63,32 +60,28 @@ export class AuthManager {
   }
 
   public setAccessToken(accessToken: AccessToken | string, writeToFile = true) {
-    try {
-      const {
-        exists,
-        file: { path },
-      } = this.tokensFileExist();
-      const tokensFile = this.getTokensFile();
-      if (writeToFile) {
-        if (!exists) {
-          const data: TokensFile = {
-            current: accessToken,
-            previous: [],
-          };
-          fs.writeFileSync(path, JSON.stringify(data), { encoding: 'utf8' });
-        } else {
-          const currentTokensFileContent = tokensFile as TokensFile;
-          let updatedTokenHistory = currentTokensFileContent.previous;
-          if (currentTokensFileContent.current) updatedTokenHistory.push(currentTokensFileContent.current);
-          const updatedData: TokensFile = {
-            current: accessToken,
-            previous: updatedTokenHistory,
-          };
-          fs.writeFileSync(path, JSON.stringify(updatedData), { encoding: 'utf8' });
+    if (writeToFile) {
+      try {
+        const {
+          exists: fileExists,
+          file: { path: filePath },
+        } = this.tokensFileExist();
+        const currentFilesContent = this.getTokensFile();
+        let fileContent: TokensFile = {
+          current: accessToken,
+          previous: [],
+        };
+
+        if (fileExists && currentFilesContent) {
+          let updatedHistory: TokensFile['previous'] = [...currentFilesContent.previous];
+          if (currentFilesContent.current) updatedHistory = [currentFilesContent.current, ...updatedHistory];
+          fileContent.previous = updatedHistory;
         }
+
+        fs.writeFileSync(filePath, JSON.stringify(fileContent), { encoding: 'utf8' });
+      } catch (error) {
+        log('ERROR', LogCategory.AccessToken, error as Error);
       }
-    } catch (error) {
-      log('ERROR', LogCategory.AccessToken, error as Error);
     }
 
     if (typeof accessToken !== 'string') {
@@ -101,14 +94,14 @@ export class AuthManager {
       );
     }
 
-    this.accessToken = accessToken;
     log(
       'INFO',
       LogCategory.AccessToken,
       `Updated access-token from ${
-        typeof this.accessToken === 'string' ? this.accessToken : JSON.stringify(accessToken)
-      } to ${typeof accessToken === 'string' ? accessToken : JSON.stringify(accessToken)}`
+        typeof this.accessToken === 'string' ? this.accessToken : this.accessToken?.accessToken
+      } to ${typeof accessToken === 'string' ? accessToken : accessToken.accessToken}`
     );
+    this.accessToken = accessToken;
   }
 
   public static isValidAccessToken(token: any): boolean {
@@ -119,7 +112,6 @@ export class AuthManager {
     const tokensFileName = 'tokens.json',
       tokensFilePath = AppConfig.tokensLocation,
       tokensFileExists = fs.existsSync(path.join(tokensFilePath, tokensFileName));
-    console.log('tokensFileExist ', tokensFileExists);
 
     return {
       exists: tokensFileExists,
@@ -141,7 +133,6 @@ export class AuthManager {
     } catch (error) {
       log('ERROR', LogCategory.AccessToken, error as Error);
     } finally {
-      console.log('getTokensFile', data);
       return data;
     }
   }
@@ -175,6 +166,17 @@ export class AuthManager {
       this.authProviderInstance = rap;
     }
     return this.authProviderInstance;
+  }
+
+  public async addAuthProviderUser() {
+    const accessToken = this.getAccessToken();
+    if (!accessToken || typeof accessToken === 'string') return false;
+    try {
+      await AuthManager.getAuthProviderInstance().addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
+      log('INFO', LogCategory.AccessToken, 'Added user to access-token');
+    } catch (error) {
+      log('ERROR', LogCategory.AccessToken, error as Error);
+    }
   }
 
   public static setAuthProviderInstance(instance: RefreshingAuthProvider) {
