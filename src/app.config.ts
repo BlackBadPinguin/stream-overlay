@@ -61,7 +61,7 @@ export const AppConfig: AppConfig = {
   chatBot: {
     prefix: '!',
     messages: {
-      noPermission: 'Da!',
+      noPermission: 'Das darfst du nicht!',
     },
   },
 };
