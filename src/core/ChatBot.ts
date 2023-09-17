@@ -7,13 +7,11 @@ import { AuthManager } from './AuthManager';
 import { TWITCH_CHANNEL_ID, io } from '..';
 
 export async function initChatBot(channel: string) {
-  console.log('A');
   if (AuthManager.getInstance().getBotStatus().bot.status === 'RUNNING') {
     log('WARN', LogCategory.ChatBot, "Chatbot is already running and can't get initialized twice");
     return;
   }
 
-  console.log('B');
   const accessToken = AuthManager.getInstance().getAccessToken();
   const isAccessTokenProvided = accessToken != null;
   if (!isAccessTokenProvided) {
@@ -21,14 +19,12 @@ export async function initChatBot(channel: string) {
     return;
   }
 
-  console.log('C');
   if (isAccessTokenProvided && typeof accessToken != 'string') {
     const accessTokenExpirationTime = getExpiryDateOfAccessToken(accessToken!);
     const dateInHours = accessTokenExpirationTime ? differenceInHours(new Date(), accessTokenExpirationTime) : 0;
     if (dateInHours < 12) log('WARN', LogCategory.AccessToken, 'Access-Token expires in ' + accessTokenExpirationTime);
   }
 
-  console.log('D');
   const AuthProvider = AuthManager.getAuthProviderInstance();
   if (!AuthProvider.hasUser(TWITCH_CHANNEL_ID)) {
     await AuthManager.getInstance().addAuthProviderUser();
@@ -40,9 +36,8 @@ export async function initChatBot(channel: string) {
     channel: channel,
     prefix: AppConfig.chatBot.prefix,
     commands: [
-      createBotCommand('dice', (params, { reply }) => {
-        const diceRoll = Math.floor(Math.random() * 6) + 1;
-        reply(`You rolled a ${diceRoll}`);
+      createBotCommand('ping', (params, { reply }) => {
+        reply(`pong`);
       }),
       createBotCommand('server', (params, { userName, reply }) => {
         reply(`Der Server heißt Panthor Life. Alle Informationen findest du unter https://panthor.de`);
@@ -77,19 +72,19 @@ export async function initChatBot(channel: string) {
         say('Thema geändert zu ' + topic);
         io.emit('update', 'topic', topic);
       }),
-      createBotCommand('timer', (params, { msg, reply, say }) => {
+      createBotCommand('time', (params, { msg, reply, say }) => {
         const userInfo = msg.userInfo;
         if (!userInfo.isMod && !userInfo.isBroadcaster) {
           return reply(AppConfig.chatBot.messages.noPermission);
         }
 
         if (params.length === 0) {
-          say('Timer zurückgesetzt!');
-          io.emit('update', 'timer', AppConfig.overlay.timerLength);
+          say('Countdown zurückgesetzt!');
+          io.emit('update', 'time', AppConfig.overlay.timerLength);
         } else if (params.length === 1) {
-          say('Timer zurückgesetzt und länge angepasst!');
-          io.emit('update', 'timer', Number(Number(params[0]).toFixed(0)));
-        } else return reply('Ungültiger Syntax. Versuche...');
+          say('Countdown angepasst!');
+          io.emit('update', 'time', Number(Number(params[0]).toFixed(0)));
+        } else return reply(`Ungültiger Syntax. Versuche ${AppConfig.chatBot.prefix}timer <Minuten>`);
       }),
       createBotCommand('scene', (params, { msg, reply, say }) => {
         const userInfo = msg.userInfo;
