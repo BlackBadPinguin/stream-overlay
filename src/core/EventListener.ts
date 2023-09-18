@@ -38,8 +38,12 @@ export async function initEventListener() {
   });
 
   listener.onStreamOnline(TWITCH_CHANNEL_ID, async (event) => {
+    log('INFO', LogCategory.WsListener, event.broadcasterName + ' is now live!');
     const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-    if (!DISCORD_WEBHOOK_URL) return;
+    if (!DISCORD_WEBHOOK_URL) {
+      log('WARN', LogCategory.WsListener, event.broadcasterName + ' is now live, but no notifcation can be send!');
+      return;
+    }
 
     try {
       const stream = await event.getStream();
@@ -66,6 +70,7 @@ export async function initEventListener() {
           headers: { 'Content-Type': 'application/json' },
         }
       );
+      log('INFO', LogCategory.WsListener, 'Send notification and received status ' + post.status);
     } catch (error) {
       log('ERROR', LogCategory.DiscordNotification, (error as Error).message);
     }
