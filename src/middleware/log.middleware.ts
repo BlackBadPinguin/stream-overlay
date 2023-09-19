@@ -8,7 +8,7 @@ export enum LogCategory {
   AuthCode = 'auth-code',
   AccessToken = 'auth-access-token',
   RefreshingAuthProvider = 'RefreshingAuthProvider',
-  WsListener = 'EventSubWsListener',
+  EventListener = 'EventSubWsListener',
   ChatBot = 'chatbot',
   ChatMessage = 'message',
   DiscordNotification = 'discord-notifcation',

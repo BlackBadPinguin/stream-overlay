@@ -25,7 +25,7 @@ export type AppConfig = {
 export const AppConfig: AppConfig = {
   // TODO: Convert into branded type
   environment: determineRuntimeEnvironment(),
-  environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNEL', 'TWITCH_CHANNEL_ID'],
+  environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNEL', 'TWITCH_CHANNEL_ID', 'ENDPOINT_PASSWORD'],
   redirectUri: determineRuntimeEnvironment() === 'PROD' ? 'https://overlay.tklein.it' : 'http://localhost',
   scopes: [
     'channel:manage:broadcast',

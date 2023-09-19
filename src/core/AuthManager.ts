@@ -5,8 +5,9 @@ import type { DataWithError } from '../types';
 import { RefreshingAuthProvider, type AccessToken, exchangeCode, getExpiryDateOfAccessToken } from '@twurple/auth';
 import { LogCategory, log } from '../middleware';
 import path from 'path';
-import fs from 'fs';
-import { format } from 'date-fns';
+import fs, { access } from 'fs';
+import { format, isFuture } from 'date-fns';
+import { TWITCH_CHANNEL_ID } from '..';
 
 export type ServiceRunningStatus = 'RUNNING' | 'STOPPED' | 'STOPPED_NO_ACCESS_TOKEN' | 'STOPPED_INVALID_ACCESS_TOKEN';
 
@@ -60,6 +61,21 @@ export class AuthManager {
   }
 
   public setAccessToken(accessToken: AccessToken | string, writeToFile = true) {
+    if (typeof accessToken !== 'string') {
+      const endDate = getExpiryDateOfAccessToken(accessToken);
+      if (!endDate) {
+        return log('WARN', LogCategory.AccessToken, `${accessToken.accessToken} doesn't have expiry information`);
+      }
+
+      if (!isFuture(endDate)) {
+        return log(
+          'WARN',
+          LogCategory.AccessToken,
+          `${accessToken.accessToken} is already expired and the token won't be saved`
+        );
+      }
+    }
+
     if (writeToFile) {
       try {
         const {
