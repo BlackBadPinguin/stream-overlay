@@ -59,7 +59,6 @@ app.get('/', async (req, res) => {
   }
   if (!accessToken) return res.json({ message: 'Received an empty access-token' });
   AuthManager.getInstance().setAccessToken(accessToken);
-  log('INFO', LogCategory.AccessToken, accessToken);
 
   return res.json({ code, scope });
 });
@@ -107,9 +106,9 @@ app.get('/app/bot/start', secure(ENDPOINT_PASSWORD), (req, res) => {
   res.sendStatus(emit('bot:start') ? 200 : 500);
 });
 
-app.get('/app/bot/stop', secure(ENDPOINT_PASSWORD), (req, res) => {
-  res.sendStatus(emit('bot:stop') ? 200 : 500);
-});
+// app.get('/app/bot/stop', secure(ENDPOINT_PASSWORD), (req, res) => {
+//   res.sendStatus(emit('bot:stop') ? 200 : 500);
+// });
 
 app.get('/app/listener/status', (req, res) => {
   const status = AuthManager.getInstance().getBotStatus().eventListener;

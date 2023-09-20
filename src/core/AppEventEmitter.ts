@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { AuthManager, EventListener } from '.';
+import { AuthManager, ChatBot, EventListener } from '.';
 import { LogCategory, log } from '../middleware';
 import { TWITCH_CHANNEL_ID } from '..';
 
@@ -38,10 +38,24 @@ AppEventEmitter.on('listener:stop', () => {
   }
 });
 
-AppEventEmitter.on('bot:start', () => {
-  console.log('START BOT');
+AppEventEmitter.on('bot:start', async () => {
+  try {
+    if (AuthManager.getInstance().getBotStatus().bot.status == 'RUNNING') {
+      return;
+    }
+
+    const AuthProvider = AuthManager.getAuthProviderInstance();
+    if (!AuthProvider.hasUser(TWITCH_CHANNEL_ID)) {
+      await AuthManager.getInstance().addAuthProviderUser();
+    }
+
+    // Will call ChatBot.getInstance() before appending the listeners
+    ChatBot.init();
+  } catch (error) {
+    log('ERROR', LogCategory.EventListener, error instanceof Error ? error.message : JSON.stringify(error));
+  }
 });
 
-AppEventEmitter.on('bot:stop', () => {
-  console.log('STOP BOT');
-});
+// AppEventEmitter.on('bot:stop', () => {
+//   console.log('STOP BOT');
+// });
