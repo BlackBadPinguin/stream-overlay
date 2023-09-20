@@ -9,6 +9,7 @@
 - [Docker](#docker)
 - [Workflow](#workflows)
 - [FaQ](#faq)
+- [Commands](#commands)
 
 ## Getting started
 
@@ -122,3 +123,17 @@ https://overlay.tklein.it/static/index.html?...
 | `stream` |   Current stream title    |       Bohrinsel für Bollmann       |
 
 </details>
+
+## Commands
+
+> Prefix for commands is defined in the [`src/app.config.ts`](./src/app.config.ts)
+
+|   Command    |      Syntax      |                    Description                    |
+| :----------: | :--------------: | :-----------------------------------------------: |
+|    `ping`    |      `ping`      |                 Will return pong                  |
+|   `server`   |     `server`     | Will provide some basic information about Panthor |
+| `mitspielen` |   `mitspielen`   | Will provide some basic information about Panthor |
+|    `hint`    | `hint <MESSAGE>` |         Show hint on your stream-overlay          |
+|   `topic`    | `topic <TOPIC>`  |        Change topic on your stream-overlay        |
+|    `time`    | `time <MINUTER>` |                Set timer/countdown                |
+|   `scene`    | `scene <SCENE>`  |             Switch your current scene             |
