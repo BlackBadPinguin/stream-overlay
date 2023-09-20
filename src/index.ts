@@ -125,4 +125,12 @@ app.get('/app/listener/stop', secure(ENDPOINT_PASSWORD), (req, res) => {
 
 server.listen(AppConfig.port, async () => {
   log('INFO', LogCategory.Setup, 'Server listening on localhost:' + AppConfig.port);
+
+  if (AppConfig.chatBot.autoStart) {
+    emit('bot:start');
+  }
+
+  if (AppConfig.listener.autoStart) {
+    emit('listener:start');
+  }
 });

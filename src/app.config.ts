@@ -15,10 +15,14 @@ export type AppConfig = {
     timerLength: number;
   };
   chatBot: {
+    autoStart: boolean;
     prefix: string;
     messages: {
       noPermission: string;
     };
+  };
+  listener: {
+    autoStart: boolean;
   };
 };
 
@@ -59,10 +63,14 @@ export const AppConfig: AppConfig = {
     startingScene: 'start',
   },
   chatBot: {
+    autoStart: true,
     prefix: '!',
     messages: {
       noPermission: 'Das darfst du nicht!',
     },
+  },
+  listener: {
+    autoStart: true,
   },
 };
 
