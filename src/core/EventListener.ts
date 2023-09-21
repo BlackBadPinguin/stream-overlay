@@ -16,7 +16,6 @@ export class EventListener {
   public static getInstance(): EventSubWsListener {
     if (!this.instance) {
       const AuthProvider = AuthManager.getAuthProviderInstance();
-      console.log(AuthProvider);
       if (!AuthProvider.hasUser(TWITCH_CHANNEL_ID)) {
         AuthManager.getInstance().addAuthProviderUser();
       }
@@ -80,7 +79,6 @@ export class EventListener {
 
         // @ts-ignore
         EventListener.onUserSocketConnect((e) => {
-          console.log(e);
           AuthManager.getInstance().updateBotStatus('eventListener', {
             status: 'RUNNING',
             reason: 'Connected successfully',

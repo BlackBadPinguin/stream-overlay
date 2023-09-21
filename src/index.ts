@@ -91,10 +91,11 @@ app.get('/app', (req, res) => {
     .json({ status });
 });
 
-app.get('/app/start', secure(ENDPOINT_PASSWORD), (req, res) => {
-  const invokedChatbot = emit('bot:start');
-  const invokedEventListener = emit('listener:start');
-  res.sendStatus(invokedChatbot && invokedEventListener ? 200 : 500);
+app.get('/app/start', secure(ENDPOINT_PASSWORD), async (req, res) => {
+  emit('bot:start');
+  emit('listener:start');
+  await sleep(1000);
+  res.redirect('/app');
 });
 
 app.get('/app/bot/status', (req, res) => {
@@ -102,29 +103,31 @@ app.get('/app/bot/status', (req, res) => {
   return res.status(status.status !== 'RUNNING' ? 500 : 200).json({ status });
 });
 
-app.get('/app/bot/start', secure(ENDPOINT_PASSWORD), (req, res) => {
-  res.sendStatus(emit('bot:start') ? 200 : 500);
+app.get('/app/bot/start', secure(ENDPOINT_PASSWORD), async (req, res) => {
+  emit('bot:start');
+  await sleep(1000);
+  res.redirect('/app/bot/status');
 });
-
-// app.get('/app/bot/stop', secure(ENDPOINT_PASSWORD), (req, res) => {
-//   res.sendStatus(emit('bot:stop') ? 200 : 500);
-// });
 
 app.get('/app/listener/status', (req, res) => {
   const status = AuthManager.getInstance().getBotStatus().eventListener;
   return res.status(status.status !== 'RUNNING' ? 500 : 200).json({ status });
 });
 
-app.get('/app/listener/start', secure(ENDPOINT_PASSWORD), (req, res) => {
-  res.sendStatus(emit('listener:start') ? 200 : 500);
+app.get('/app/listener/start', secure(ENDPOINT_PASSWORD), async (req, res) => {
+  emit('listener:start');
+  await sleep(1000);
+  res.redirect('/app/listener/status');
 });
 
-app.get('/app/listener/stop', secure(ENDPOINT_PASSWORD), (req, res) => {
-  res.sendStatus(emit('listener:stop') ? 200 : 500);
+app.get('/app/listener/stop', secure(ENDPOINT_PASSWORD), async (req, res) => {
+  emit('listener:stop');
+  await sleep(1000);
+  res.redirect('/app/listener/status');
 });
 
 server.listen(AppConfig.port, async () => {
-  log('INFO', LogCategory.Setup, 'Server listening on localhost:' + AppConfig.port);
+  log('LOG', LogCategory.Setup, 'Server listening on localhost:' + AppConfig.port);
 
   if (AppConfig.chatBot.autoStart) {
     emit('bot:start');
@@ -134,3 +137,7 @@ server.listen(AppConfig.port, async () => {
     emit('listener:start');
   }
 });
+
+export function sleep(timeInMillis = 1000) {
+  return new Promise((res) => setTimeout(res, timeInMillis));
+}
