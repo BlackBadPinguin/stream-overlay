@@ -15,17 +15,21 @@ export type AppConfig = {
     timerLength: number;
   };
   chatBot: {
+    autoStart: boolean;
     prefix: string;
     messages: {
       noPermission: string;
     };
+  };
+  listener: {
+    autoStart: boolean;
   };
 };
 
 export const AppConfig: AppConfig = {
   // TODO: Convert into branded type
   environment: determineRuntimeEnvironment(),
-  environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNEL', 'TWITCH_CHANNEL_ID'],
+  environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNEL', 'TWITCH_CHANNEL_ID', 'ENDPOINT_PASSWORD'],
   redirectUri: determineRuntimeEnvironment() === 'PROD' ? 'https://overlay.tklein.it' : 'http://localhost',
   scopes: [
     'channel:manage:broadcast',
@@ -59,10 +63,14 @@ export const AppConfig: AppConfig = {
     startingScene: 'start',
   },
   chatBot: {
+    autoStart: true,
     prefix: '!',
     messages: {
       noPermission: 'Das darfst du nicht!',
     },
+  },
+  listener: {
+    autoStart: true,
   },
 };
 

@@ -4,11 +4,15 @@
 
 ## ToC
 
-- [Features](#features)
-- [Getting started](#getting-started)
-- [Docker](#docker)
-- [Workflow](#workflows)
-- [FaQ](#faq)
+- [Stream Overlay](#stream-overlay)
+  - [ToC](#toc)
+  - [Getting started](#getting-started)
+  - [Docker](#docker)
+  - [Workflows](#workflows)
+    - [Publish Docker Image](#publish-docker-image)
+    - [Deploy Image](#deploy-image)
+  - [FaQ](#faq)
+  - [Commands](#commands)
 
 ## Getting started
 
@@ -75,33 +79,59 @@
 ## FaQ
 
 <details>
-  <summary><strong>Sign in with Twitch</strong></summary>
+<summary><strong>See app status</strong></summary>
 
-- Visit `/auth/login` and sign in with your Twitch account (prefered PanthorDE)
+You can check the status of each service using the following endpoints
+
+- `/app/bot/status`
+- `/app/listener/status`
+
+Alternatively, you can also visit [PanthorDE Status](//status.tklein.it/status/panthor).
 
 </details>
 
 <details>
-  <summary><strong>Save access-token</strong></summary>
+<summary><strong>Starting services/application</strong></summary>
 
-- Send a request to `POST /auth/token` with the following payload
+> Assuming that no one has logged in before or deposited an access token.
 
-```
+> All endpoints that start or stop the application must be queried with the query parameter `password`, whose value is set in the environment variable `ENDPOINT_PASSWORD`.
+
+1. Activate auto-start in `src/app.config.ts`
+2. Log in with Twitch using the `/auth/login` endpoint.
+3. Then start
+   - the entire application by calling the endpoint `/app/start`
+   - individual services by calling these endpoints
+     - `/app/bot/start`
+     - `/app/listener/start`
+
+</details>
+
+<details>
+<summary><strong>Stopping services</strong></summary>
+
+> All endpoints that start or stop the application must be queried with the query parameter `password`, whose value is set in the environment variable `ENDPOINT_PASSWORD`.
+
+Stop individual services by calling these endpoints
+
+- `/app/bot/start`
+- `/app/listener/start`
+
+</details>
+
+<details>
+<summary><strong>“Deposit” access token</strong></summary>
+
+You can manually deposit an access token by sending the following request
+
+```http request
+GET /auth/token HTTP/1.1
+Content-Type: application/json
+
 {
-  "token": <TOKEN> // string or object
+  "token": <ACCESS_TOKEN>
 }
 ```
-
-</details>
-
-<details>
-  <summary><strong>Start Bot/Event-Listener</strong></summary>
-
-> Sign in with Twitch beforehand or save a valid access token
-
-> The endpoint is only reachable if the environment variable `BOT_INIT_PASSWORD` is set. The value of the variable must be specified as the query parameter `password`.
-
-- Call the endpoint `/bot/init` and wait about 2 seconds
 
 </details>
 
@@ -122,3 +152,17 @@ https://overlay.tklein.it/static/index.html?...
 | `stream` |   Current stream title    |       Bohrinsel für Bollmann       |
 
 </details>
+
+## Commands
+
+> Prefix for commands is defined in the [`src/app.config.ts`](./src/app.config.ts)
+
+|   Command    |      Syntax      |                    Description                    |
+| :----------: | :--------------: | :-----------------------------------------------: |
+|    `ping`    |      `ping`      |                 Will return pong                  |
+|   `server`   |     `server`     | Will provide some basic information about Panthor |
+| `mitspielen` |   `mitspielen`   | Will provide some basic information about Panthor |
+|    `hint`    | `hint <MESSAGE>` |         Show hint on your stream-overlay          |
+|   `topic`    | `topic <TOPIC>`  |        Change topic on your stream-overlay        |
+|    `time`    | `time <MINUTER>` |                Set timer/countdown                |
+|   `scene`    | `scene <SCENE>`  |             Switch your current scene             |

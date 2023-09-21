@@ -2,11 +2,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
 import http from 'http';
-import { AppConfig } from './app.config';
-import { LogCategory, log, logMiddleware } from './middleware';
-import path from 'path';
-import { AuthManager, initChatBot, initEventListener } from './core';
 import { Server } from 'socket.io';
+import path from 'path';
+import { AppConfig } from './app.config';
+import { LogCategory, log, logMiddleware, secure } from './middleware';
+import { AuthManager, emit } from './core';
 
 /**
  * Check if all required environment-variables are set
@@ -32,6 +32,7 @@ export const CLIENT_ID = process.env.CLIENT_ID as string;
 export const CLIENT_SECRET = process.env.CLIENT_SECRET as string;
 export const TWITCH_CHANNEL = process.env.TWITCH_CHANNEL as string;
 export const TWITCH_CHANNEL_ID = process.env.TWITCH_CHANNEL_ID as string;
+export const ENDPOINT_PASSWORD = process.env.ENDPOINT_PASSWORD as string;
 
 console.table({ CLIENT_ID, CLIENT_SECRET, TWITCH_CHANNELS: TWITCH_CHANNEL, TWITCH_CHANNELS_ID: TWITCH_CHANNEL_ID });
 
@@ -58,7 +59,6 @@ app.get('/', async (req, res) => {
   }
   if (!accessToken) return res.json({ message: 'Received an empty access-token' });
   AuthManager.getInstance().setAccessToken(accessToken);
-  log('INFO', LogCategory.AccessToken, accessToken);
 
   return res.json({ code, scope });
 });
@@ -84,54 +84,60 @@ app.post('/auth/token', (req, res) => {
   }
 });
 
-app.get('/bot/init', async (req, res) => {
-  if (!process.env.BOT_INIT_PASSWORD) {
-    return res.json({ message: 'This endpoint is disabled' });
-  }
-  const pwd = req.query.password;
-  if (!pwd) {
-    return res.json({ message: "Provide an 'password' query-parameter" });
-  }
-
-  if (pwd !== process.env.BOT_INIT_PASSWORD) {
-    return res.json({ message: 'Provided password is invalid' });
-  }
-
-  try {
-    const status = AuthManager.getInstance().getBotStatus();
-    let startedServices: string[] = [];
-
-    if (status.bot.status !== 'RUNNING') {
-      startedServices.push('Chatbot');
-      await initChatBot(TWITCH_CHANNEL);
-    }
-
-    if (status.eventListener.status !== 'RUNNING') {
-      startedServices.push('Event-listener');
-      await initEventListener();
-    }
-
-    if (startedServices.length === 0) {
-      return res.json({ message: 'All services are already running' });
-    } else {
-      await sleep(500);
-      res.redirect('/bot/status');
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: (error as Error).message });
-  }
+app.get('/app', (req, res) => {
+  const status = AuthManager.getInstance().getBotStatus();
+  return res
+    .status(Object.entries(status).some(([_, statusObj]) => statusObj.status !== 'RUNNING') ? 500 : 200)
+    .json({ status });
 });
 
-app.get('/bot/status', (req, res) => {
-  const botStatus = AuthManager.getInstance().getBotStatus();
-  return res
-    .status(Object.entries(botStatus).some(([_, statusObj]) => statusObj.status !== 'RUNNING') ? 500 : 200)
-    .json(botStatus);
+app.get('/app/start', secure(ENDPOINT_PASSWORD), async (req, res) => {
+  emit('bot:start');
+  emit('listener:start');
+  await sleep(1000);
+  res.redirect('/app');
+});
+
+app.get('/app/bot/status', (req, res) => {
+  const status = AuthManager.getInstance().getBotStatus().bot;
+  return res.status(status.status !== 'RUNNING' ? 500 : 200).json({ status });
+});
+
+app.get('/app/bot/start', secure(ENDPOINT_PASSWORD), async (req, res) => {
+  emit('bot:start');
+  await sleep(1000);
+  res.redirect('/app/bot/status');
+});
+
+app.get('/app/listener/status', (req, res) => {
+  const status = AuthManager.getInstance().getBotStatus().eventListener;
+  return res.status(status.status !== 'RUNNING' ? 500 : 200).json({ status });
+});
+
+app.get('/app/listener/start', secure(ENDPOINT_PASSWORD), async (req, res) => {
+  emit('listener:start');
+  await sleep(1000);
+  res.redirect('/app/listener/status');
+});
+
+app.get('/app/listener/stop', secure(ENDPOINT_PASSWORD), async (req, res) => {
+  emit('listener:stop');
+  await sleep(1000);
+  res.redirect('/app/listener/status');
 });
 
 server.listen(AppConfig.port, async () => {
-  log('INFO', LogCategory.Setup, 'Server listening on localhost:' + AppConfig.port);
+  log('LOG', LogCategory.Setup, 'Server listening on localhost:' + AppConfig.port);
+
+  if (AppConfig.chatBot.autoStart) {
+    emit('bot:start');
+  }
+
+  if (AppConfig.listener.autoStart) {
+    emit('listener:start');
+  }
 });
 
-const sleep = (time = 1000) => new Promise((res) => setTimeout(() => res, time));
+export function sleep(timeInMillis = 1000) {
+  return new Promise((res) => setTimeout(res, timeInMillis));
+}

@@ -4,14 +4,14 @@ import { type NextFunction, type Request, type Response } from 'express';
 export type LogType = 'LOG' | 'INFO' | 'WARN' | 'ERROR';
 
 export enum LogCategory {
-  Setup = 'setup',
-  AuthCode = 'auth-code',
-  AccessToken = 'auth-access-token',
+  Setup = 'Setup',
+  AuthCode = 'Auth-Code',
+  AccessToken = 'Access-Token',
   RefreshingAuthProvider = 'RefreshingAuthProvider',
-  WsListener = 'EventSubWsListener',
-  ChatBot = 'chatbot',
-  ChatMessage = 'message',
-  DiscordNotification = 'discord-notifcation',
+  EventListener = 'Event-Listener',
+  ChatBot = 'Chatbot',
+  ChatMessage = 'Message',
+  DiscordNotification = 'Discord Notification',
 }
 
 export function logMiddleware(req: Request, res: Response, next: NextFunction) {

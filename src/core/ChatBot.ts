@@ -1,41 +1,35 @@
-import { differenceInHours } from 'date-fns';
-import { Bot, createBotCommand } from '@twurple/easy-bot';
-import { getExpiryDateOfAccessToken } from '@twurple/auth';
+import { Bot, type BotCommand, createBotCommand } from '@twurple/easy-bot';
 import { AppConfig } from '../app.config';
 import { LogCategory, log } from '../middleware';
 import { AuthManager } from './AuthManager';
-import { TWITCH_CHANNEL_ID, io } from '..';
+import { TWITCH_CHANNEL, io } from '..';
 
-export async function initChatBot(channel: string) {
-  if (AuthManager.getInstance().getBotStatus().bot.status === 'RUNNING') {
-    log('WARN', LogCategory.ChatBot, "Chatbot is already running and can't get initialized twice");
-    return;
+export class ChatBot {
+  private static instance: Bot;
+
+  /**
+   * @returns {Bot}
+   * @throws {Error}
+   */
+  public static getInstance() {
+    if (!this.instance) {
+      const AuthProvider = AuthManager.getAuthProviderInstance();
+      const ChatBot = new Bot({
+        debug: AppConfig.environment == 'DEV',
+        authProvider: AuthProvider,
+        channel: TWITCH_CHANNEL,
+        prefix: AppConfig.chatBot.prefix,
+        commands: this.getCommands(),
+      });
+
+      this.instance = ChatBot;
+    }
+
+    return this.instance;
   }
 
-  const accessToken = AuthManager.getInstance().getAccessToken();
-  const isAccessTokenProvided = accessToken != null;
-  if (!isAccessTokenProvided) {
-    log('ERROR', LogCategory.AccessToken, 'No access-token provided');
-    return;
-  }
-
-  if (isAccessTokenProvided && typeof accessToken != 'string') {
-    const accessTokenExpirationTime = getExpiryDateOfAccessToken(accessToken!);
-    const dateInHours = accessTokenExpirationTime ? differenceInHours(new Date(), accessTokenExpirationTime) : 0;
-    if (dateInHours < 12) log('WARN', LogCategory.AccessToken, 'Access-Token expires in ' + accessTokenExpirationTime);
-  }
-
-  const AuthProvider = AuthManager.getAuthProviderInstance();
-  if (!AuthProvider.hasUser(TWITCH_CHANNEL_ID)) {
-    await AuthManager.getInstance().addAuthProviderUser();
-  }
-
-  const bot = new Bot({
-    debug: AppConfig.environment == 'DEV',
-    authProvider: AuthProvider,
-    channel: channel,
-    prefix: AppConfig.chatBot.prefix,
-    commands: [
+  public static getCommands(): BotCommand[] {
+    return [
       createBotCommand('ping', (params, { reply }) => {
         reply(`pong`);
       }),
@@ -102,49 +96,68 @@ export async function initChatBot(channel: string) {
         reply(`Szene zu '${scene}' gewechselt!`);
         io.emit('scene', scene, false);
       }),
-    ],
-  });
+    ];
+  }
 
-  bot.onConnect(() => log('INFO', LogCategory.ChatBot, 'Chatbot connected to chat'));
+  /**
+   * Will apply all wanted event-listeners and their handlers
+   */
+  public static init() {
+    try {
+      const bot = ChatBot.getInstance();
 
-  bot.onDisconnect((manually, reason) => {
-    log(
-      'INFO',
-      LogCategory.ChatBot,
-      `Chatbot ${manually && 'manually'} disconnected from chat. Reason '${reason ? reason.message : 'UNKNOWN'}'`
-    );
-  });
+      bot.onConnect(() => log('INFO', LogCategory.ChatBot, 'Chatbot connected to chat'));
 
-  bot.onAuthenticationSuccess(() => {
-    log('INFO', LogCategory.ChatBot, 'Chatbot authentificated successfully');
-    AuthManager.getInstance().updateBotStatus('bot', { status: 'RUNNING', reason: 'Connected successfully' });
-  });
+      bot.onDisconnect((manually, reason) => {
+        log(
+          'INFO',
+          LogCategory.ChatBot,
+          `Chatbot ${manually && 'manually'} disconnected from chat. Reason '${reason ? reason.message : 'UNKNOWN'}'`
+        );
+      });
 
-  bot.onAuthenticationFailure((text, retryCount) => {
-    log('ERROR', LogCategory.ChatBot, `Attempt ${retryCount} of chatbot-authentification failed because of '${text}'`);
-    AuthManager.getInstance().updateBotStatus('bot', { status: 'STOPPED_INVALID_ACCESS_TOKEN', reason: text });
-  });
+      bot.onAuthenticationSuccess(() => {
+        log('INFO', LogCategory.ChatBot, 'Chatbot authentificated successfully');
+        AuthManager.getInstance().updateBotStatus('bot', { status: 'RUNNING', reason: 'Connected successfully' });
+      });
 
-  bot.onMessage((event) => {
-    const msg = event.text;
-    if (msg.substring(0, 1) === AppConfig.chatBot.prefix) return;
+      bot.onAuthenticationFailure((text, retryCount) => {
+        log(
+          'ERROR',
+          LogCategory.ChatBot,
+          `Attempt ${retryCount} of chatbot-authentification failed because of '${text}'`
+        );
+        AuthManager.getInstance().updateBotStatus('bot', { status: 'STOPPED_INVALID_ACCESS_TOKEN', reason: text });
+      });
 
-    log('INFO', LogCategory.ChatMessage, event.userName + '::' + msg);
-    io.emit('chatMessage', msg, [false], [event.userDisplayName, false, false, false, false, false]);
-  });
+      bot.onMessage((event) => {
+        const msg = event.text;
+        if (msg.substring(0, 1) === AppConfig.chatBot.prefix) return;
 
-  bot.onSub(({ broadcasterName, userName }) => {
-    bot.say(broadcasterName, `Danke @${userName} für das abonieren!`);
-    io.emit('twitchEvent', 'sub', userName);
-  });
+        log('INFO', LogCategory.ChatMessage, event.userName + '::' + msg);
+        io.emit('chatMessage', msg, [false], [event.userDisplayName, false, false, false, false, false]);
+      });
 
-  bot.onResub(({ broadcasterName, userName, months }) => {
-    bot.say(broadcasterName, `Danke @${userName} für das erneute abonieren im ${months} Monat!`);
-    io.emit('twitchEvent', 're-sub', userName);
-  });
+      bot.onSub(({ broadcasterName, userName }) => {
+        bot.say(broadcasterName, `Danke @${userName} für das abonieren!`);
+        io.emit('twitchEvent', 'sub', userName);
+      });
 
-  bot.onSubGift(({ broadcasterName, gifterName, userName }) => {
-    bot.say(broadcasterName, `Danke @${gifterName} für das verschenken eines Abos an @${userName}!`);
-    io.emit('twitchEvent', 'gift-sub', userName);
-  });
+      bot.onResub(({ broadcasterName, userName, months }) => {
+        bot.say(broadcasterName, `Danke @${userName} für das erneute abonieren im ${months} Monat!`);
+        io.emit('twitchEvent', 're-sub', userName);
+      });
+
+      bot.onSubGift(({ broadcasterName, gifterName, userName }) => {
+        bot.say(broadcasterName, `Danke @${gifterName} für das verschenken eines Abos an @${userName}!`);
+        io.emit('twitchEvent', 'gift-sub', userName);
+      });
+    } catch (error) {
+      log(
+        'ERROR',
+        LogCategory.ChatBot,
+        `Couldn't initialise the chat-bot. More ${error instanceof Error ? error.message : JSON.stringify(error)}`
+      );
+    }
+  }
 }
