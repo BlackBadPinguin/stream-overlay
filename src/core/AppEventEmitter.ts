@@ -30,16 +30,16 @@ AppEventEmitter.on('listener:start', async () => {
       await AuthManager.getInstance().addAuthProviderUser();
     }
 
-    EventListener.getInstance().start();
+    (await EventListener.getInstance())?.start();
   } catch (error) {
     log('ERROR', LogCategory.EventListener, error instanceof Error ? error.message : JSON.stringify(error));
   }
 });
 
-AppEventEmitter.on('listener:stop', () => {
+AppEventEmitter.on('listener:stop', async () => {
   log('LOG', LogCategory.EventListener, "Invoked 'listener:stop'");
   try {
-    EventListener.getInstance().stop();
+    (await EventListener.getInstance())?.stop();
   } catch (error) {
     log('ERROR', LogCategory.EventListener, error instanceof Error ? error.message : JSON.stringify(error));
   }
@@ -61,12 +61,11 @@ AppEventEmitter.on('bot:start', async () => {
 
     const AuthProvider = AuthManager.getAuthProviderInstance();
     if (!AuthProvider.hasUser(TWITCH_CHANNEL_ID)) {
-      await AuthManager.getInstance().addAuthProviderUser();
-    }
-
-    // Will call ChatBot.getInstance() before appending the listeners
-    ChatBot.init();
+      await AuthManager.getInstance()
+        .addAuthProviderUser()
+        .then(() => ChatBot.init());
+    } else ChatBot.init();
   } catch (error) {
-    log('ERROR', LogCategory.EventListener, error instanceof Error ? error.message : JSON.stringify(error));
+    log('ERROR', LogCategory.ChatBot, error instanceof Error ? error.message : JSON.stringify(error));
   }
 });
