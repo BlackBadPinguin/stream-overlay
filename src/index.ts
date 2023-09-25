@@ -63,7 +63,7 @@ app.get('/', async (req, res) => {
   return res.json({ code, scope });
 });
 
-app.get('/auth/login', (req, res) => {
+app.get('/auth/login', secure(ENDPOINT_PASSWORD), (req, res) => {
   // https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#authorization-code-grant-flow
   res.redirect(
     `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${
@@ -72,7 +72,7 @@ app.get('/auth/login', (req, res) => {
   );
 });
 
-app.post('/auth/token', (req, res) => {
+app.post('/auth/token', secure(ENDPOINT_PASSWORD), (req, res) => {
   try {
     const accessToken = req.body.token;
     if (accessToken && AuthManager.isValidAccessToken(accessToken)) {
