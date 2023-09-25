@@ -89,11 +89,12 @@ export class EventListener {
         // @ts-ignore
         EventListener.onUserSocketDisconnect((userId, error) => {
           try {
-            AuthManager.getInstance().updateBotStatus('eventListener', {
-              status: 'STOPPED',
-              reason: error instanceof Error ? error.message : error,
-            });
-            log('INFO', LogCategory.EventListener, `EventListener disconnected! More ${JSON.stringify(error)}`);
+            const errorMsg = error instanceof Error ? error.message : error;
+            AuthManager.getInstance().updateBotStatus('eventListener', { status: 'STOPPED', reason: errorMsg });
+            log('INFO', LogCategory.EventListener, `EventListener disconnected! More ${errorMsg}`);
+
+            EventListener.stop();
+            log('WARN', LogCategory.EventListener, `EventListener stopped!`);
           } catch (error) {
             log('ERROR', LogCategory.EventListener, `Something went wrong! More ${(error as Error).message}`);
           }
