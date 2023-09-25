@@ -181,7 +181,9 @@ export class AuthManager {
 
   public async addAuthProviderUser() {
     const accessToken = this.getAccessToken();
-    if (!accessToken || typeof accessToken === 'string') return false;
+    if (!accessToken || typeof accessToken === 'string') {
+      throw new Error("Couldn't add a user, because no access-token we're found");
+    }
     try {
       await AuthManager.getAuthProviderInstance().addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
       log('LOG', LogCategory.AccessToken, 'Added user to access-token');
