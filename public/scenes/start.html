@@ -1,4 +1,4 @@
-<img src="assets/pause.png" id="pause" width="1920" height="1080" />
+<img src="assets/background.png" id="pause" width="1920" height="1080" />
 <img src="assets/panthor_text.png" style="position: fixed; width: 30%; top: -170px; left: -30px" />
 <img
   src="assets/element_move1.png"
@@ -86,19 +86,19 @@
 
 <script>
   $(document).ready(function () {
-    var timer;
-    var int;
+    let timer;
+    let int;
     async function startTimer(duration) {
       $('#progress').hide();
       $('#countdown').hide();
       $('#intro').hide();
       $('#intro_over').hide();
       clearInterval(int);
-      var display = document.querySelector('#timer');
-      var bar = document.querySelector('#starting_bar');
-      var video = document.querySelector('#intro');
+      let display = document.querySelector('#timer');
+      let bar = document.querySelector('#starting_bar');
+      let video = document.querySelector('#intro');
       timer = duration;
-      var minutes, seconds;
+      let minutes, seconds;
       bar.style.width = '0%';
       int = setInterval(async function () {
         minutes = parseInt(timer / 60, 10);
@@ -118,6 +118,7 @@
           $('#intro').show();
           video.pause();
           video.currentTime = 0;
+          video.volume = 0.1;
           video.play();
         }
       }, 1000);
@@ -125,11 +126,10 @@
       $('#progress').fadeIn();
       $('#countdown').fadeIn();
     }
-    startTimer(5 * 60);
 
     document.getElementById('intro').addEventListener(
       'ended',
-      function () {
+      () => {
         $('#intro_over').css('display', 'flex');
       },
       true
@@ -140,6 +140,17 @@
         case 'time': // for start page
           await sleep(700);
           startTimer(60 * data);
+          break;
+      }
+    });
+
+    socket.on('scene', (scene, instant) => {
+      switch (scene) {
+        case 'start':
+          break;
+
+        default:
+          clearInterval(int);
           break;
       }
     });
