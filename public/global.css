@@ -1,0 +1,151 @@
+* {
+  margin: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  font-family: 'Raleway', sans-serif;
+  color: white;
+  background-color: #262626;
+}
+
+#playback-video {
+  position: absolute;
+  z-index: 30;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+  box-shadow: 0 10px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19) !important;
+}
+
+#main-content {
+  position: relative;
+}
+
+.floating-element {
+  z-index: 100;
+  position: absolute;
+  filter: invert(60%) sepia(54%) saturate(5688%) hue-rotate(330deg) brightness(100%) contrast(101%);
+  animation: float 6s ease-in-out infinite;
+  width: min-content;
+  height: min-content;
+}
+
+@media (max-width: 1600px) {
+  .floating-element {
+    max-width: 65%;
+    object-fit: contain;
+  }
+}
+
+@media (max-width: 1920px) {
+  .floating-element {
+    max-width: 60%;
+    object-fit: contain;
+  }
+}
+
+@media (max-width: 4000px) {
+  .floating-element {
+    max-width: 40%;
+    object-fit: contain;
+  }
+
+  .floating-element:nth-child(2) {
+    max-width: 50%;
+  }
+}
+
+.floating-element:nth-child(1) {
+  top: 0;
+}
+
+.floating-element:nth-child(2) {
+  top: 0rem;
+  right: 1rem;
+}
+
+@keyframes float {
+  0% {
+    transform: translatey(0px);
+  }
+  50% {
+    transform: translatey(-15px);
+  }
+  100% {
+    transform: translatey(0px);
+  }
+}
+
+main {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 93%;
+}
+main > section {
+  width: 80%;
+  box-sizing: border-box;
+}
+
+main > aside {
+  width: 20%;
+  height: 100%;
+  background-color: #262626;
+}
+
+aside > #logo {
+  width: auto;
+  height: 3rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+aside > #chat-container {
+  position: relative;
+  height: calc(100% - 8.6rem);
+  box-sizing: border-box;
+  margin: 2rem;
+  margin-top: 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  border: 0.4rem solid #464545;
+  border-radius: 12px;
+}
+
+#chat-container .title-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+#chat-container .title {
+  font-size: 2rem;
+  text-transform: uppercase;
+}
+
+#chat-container img {
+  width: 2rem;
+  height: 2rem;
+  margin-right: 0.3rem;
+}
+
+#chat-container #chat-msg-container {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border-width: 3px;
+  border-radius: 12px;
+}
+
+#chat-container .chat-message:not(:last-child) {
+  margin-bottom: 0.75rem;
+}
+
+footer {
+  width: 100%;
+  height: 7%;
+}
