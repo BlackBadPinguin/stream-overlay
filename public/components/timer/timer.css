@@ -1,14 +1,23 @@
-.timer {
-  /* aspect-ratio: 3/2; */
+html,
+body {
   width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.timer .title {
+.timer {
+  width: 25%;
+  min-width: 500px;
+}
+
+.title {
   font-size: 5rem;
   margin-bottom: 0;
 }
 
-.timer .subtitle {
+.subtitle {
   font-size: 3rem;
   margin-top: 0;
   margin-bottom: 1rem;
@@ -40,4 +49,31 @@
   font-size: 3rem;
   margin-top: 0;
   text-align: right;
+}
+
+.waiting {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+}
+.waiting.show {
+  display: flex;
+}
+
+.waiting div {
+  display: flex;
+  flex-direction: column;
+}
+
+.waiting img {
+  width: 100px;
+  margin: 0 auto;
+}
+
+.waiting .title {
+  font-size: 3.4rem;
+  margin-top: 0;
 }

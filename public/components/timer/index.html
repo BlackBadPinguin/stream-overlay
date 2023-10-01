@@ -29,6 +29,13 @@
     </div>
   </main>
 
+  <main class="waiting">
+    <div>
+      <img class="floating-element" src="../../assets/hexagon_panthor.png" />
+      <h1 class="title text-shadow">Warten auf Streamer....</h1>
+    </div>
+  </main>
+
   <!-- jQuery -->
   <script src="https://code.jquery.com/jquery.min.js"></script>
   <!-- SocketIO -->
@@ -59,6 +66,7 @@
       async function startTimer(duration) {
         const timer = document.querySelector('#timer');
         const progressBar = document.querySelector('#bar');
+        const waiting = document.querySelector('.waiting');
 
         if (!timer || !progressBar) return;
         progressBar.style.width = '0%';
@@ -80,6 +88,7 @@
           timer.textContent = minutes + ':' + seconds;
           if (timeLeft <= 0) {
             clearInterval(interval);
+            waiting.classList.add('show');
           }
         }, 1000);
       }
