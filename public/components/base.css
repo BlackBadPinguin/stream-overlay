@@ -4,3 +4,7 @@ body {
   margin: 0;
   color: white;
 }
+
+.text-shadow {
+  text-shadow: 5px 5px 2px black;
+}

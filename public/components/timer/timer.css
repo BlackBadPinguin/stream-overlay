@@ -1,0 +1,43 @@
+.timer {
+  /* aspect-ratio: 3/2; */
+  width: 100%;
+}
+
+.timer .title {
+  font-size: 5rem;
+  margin-bottom: 0;
+}
+
+.timer .subtitle {
+  font-size: 3rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.progress-container {
+  width: 100%;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 2rem;
+  background-color: #929292;
+  border-radius: 8px;
+}
+
+.progress-bar-inner {
+  width: 1%;
+  height: 100%;
+  background: white;
+  border-radius: inherit;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.progress-container #timer {
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 3rem;
+  margin-top: 0;
+  text-align: right;
+}
