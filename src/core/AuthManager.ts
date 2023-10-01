@@ -5,9 +5,8 @@ import type { DataWithError } from '../types';
 import { RefreshingAuthProvider, type AccessToken, exchangeCode, getExpiryDateOfAccessToken } from '@twurple/auth';
 import { LogCategory, log } from '../middleware';
 import path from 'path';
-import fs, { access } from 'fs';
+import fs from 'fs';
 import { format, isFuture } from 'date-fns';
-import { TWITCH_CHANNEL_ID } from '..';
 
 export type ServiceRunningStatus = 'RUNNING' | 'STOPPED' | 'STOPPED_NO_ACCESS_TOKEN' | 'STOPPED_INVALID_ACCESS_TOKEN';
 
@@ -32,7 +31,7 @@ export class AuthManager {
     if (!exists) return;
     const currentFilesContent = this.getTokensFile();
     if (currentFilesContent && currentFilesContent.current) {
-      log('INFO', LogCategory.AccessToken, 'Retrieving access-token from local tokens.json');
+      log('LOG', LogCategory.AccessToken, 'Retrieving access-token from local tokens.json');
       this.setAccessToken(currentFilesContent.current, false);
     }
   }
@@ -110,13 +109,9 @@ export class AuthManager {
       );
     }
 
-    log(
-      'INFO',
-      LogCategory.AccessToken,
-      `Updated access-token from ${
-        typeof this.accessToken === 'string' ? this.accessToken : this.accessToken?.accessToken
-      } to ${typeof accessToken === 'string' ? accessToken : accessToken.accessToken}`
-    );
+    let currentToken = typeof this.accessToken === 'string' ? this.accessToken : this.accessToken?.accessToken,
+      newToken = typeof accessToken === 'string' ? accessToken : accessToken.accessToken;
+    log('INFO', LogCategory.AccessToken, `Updated access-token from ${currentToken} to ${newToken}`);
     this.accessToken = accessToken;
   }
 
@@ -171,12 +166,12 @@ export class AuthManager {
       });
 
       rap.onRefresh(([userId, newToken]) => {
-        log('INFO', LogCategory.RefreshingAuthProvider, 'Refresh token for ' + userId + ' was refreshed');
+        log('LOG', LogCategory.RefreshingAuthProvider, 'Refresh token for ' + userId + ' was refreshed');
         AuthManager.getInstance().setAccessToken(newToken);
       });
 
       rap.onRefreshFailure(([userId]) => {
-        log('INFO', LogCategory.RefreshingAuthProvider, "Couldn't refresh the access-token for " + userId);
+        log('ERROR', LogCategory.RefreshingAuthProvider, "Couldn't refresh the access-token for " + userId);
       });
 
       this.authProviderInstance = rap;
@@ -186,10 +181,12 @@ export class AuthManager {
 
   public async addAuthProviderUser() {
     const accessToken = this.getAccessToken();
-    if (!accessToken || typeof accessToken === 'string') return false;
+    if (!accessToken || typeof accessToken === 'string') {
+      throw new Error("Couldn't add a user, because no access-token we're found");
+    }
     try {
       await AuthManager.getAuthProviderInstance().addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
-      log('INFO', LogCategory.AccessToken, 'Added user to access-token');
+      log('LOG', LogCategory.AccessToken, 'Added user to access-token');
     } catch (error) {
       log('ERROR', LogCategory.AccessToken, error as Error);
     }
