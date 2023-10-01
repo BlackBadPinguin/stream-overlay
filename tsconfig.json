@@ -107,5 +107,6 @@
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  }
+  },
+  "exclude": ["./public/components/chat/chat.js", "./public/libs/play_audio.util.js", "./public/libs/sleep.util.js"]
 }
