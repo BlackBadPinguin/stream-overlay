@@ -95,15 +95,13 @@
       };
 
       async function addAlert(title, message, icon, duration, hint = false) {
-        if (title != '') {
-          title = title + '<br />';
-        }
         let div = $('#alerts').append(`<div class="newAlert shadow-lg" style="float: right" data-id="${title}">
-                            <div class="alertImageBox">
-                            <img src="assets/hexagon.png" width="90px" height="90px" style="text-shadow: 2px 2px 4px #000000;">
-                            <div><i class="icon ${icon} newAlertIcon"></i></div></div>
-                            <h5 class="newAlertText">${title}<span class="newAlertSubText">${message}</span></h5>
-                            </div>`);
+          <div class="alertImageBox">
+            <img src="assets/hexagon.png" width="90px" height="90px" style="text-shadow: 2px 2px 4px #000000;">
+            <div><i class="icon ${icon} newAlertIcon"></i></div></div>
+            <h5 class="newAlertText">${title}<span class="newAlertSubText">${message}</span></h5>
+          </div>`);
+
         animateCSS('.newAlert[data-id="' + title + '"]', 'fadeInRight');
 
         if (hint) {
@@ -124,6 +122,7 @@
       $(function () {
         $('#content').load('scenes/start.html');
         $('#contentMain').load('scenes/main.html');
+
         //transition();
 
         socket.on('update', function (type, data) {
