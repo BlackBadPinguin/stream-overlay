@@ -1,0 +1,100 @@
+<head>
+  <!-- FontAwesome -->
+  <link
+    href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"
+    rel="stylesheet"
+    type="text/css"
+  />
+  <script src="https://kit.fontawesome.com/e59294cd4b.js" crossorigin="anonymous"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&amp;display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet"
+  />
+  <!-- Custom -->
+  <link rel="stylesheet" href="../base.css" />
+  <link rel="stylesheet" href="./footer.css" />
+</head>
+<body>
+  <footer>
+    <span class="serverURL">PANTHOR.DE</span>
+    <img src="../../assets/hexagon_panthor.png" class="panthor_hexagon" />
+    <div class="parent">
+      <div class="div1">
+        <div id="profileImage">
+          <img id="dyn_streamer_pic" src="../../assets/example1.jpg" />
+        </div>
+        <h5>
+          <span id="dyn_streamer_name" class="text-gradient">&#60;NAME&#62;</span><br />
+          <span id="dyn_streamer_rank">&#60;RANK&#62;</span>
+        </h5>
+      </div>
+      <div class="div2">
+        <span id="Instagram" class="social_icon"
+          ><i class="fa-brands fa-instagram"></i><span class="social_text">PanthorDE</span></span
+        >
+        <span id="tiktok" class="social_icon"
+          ><i class="fa-brands fa-tiktok"></i><span class="social_text">PanthorDE</span></span
+        >
+        <span id="youtube" class="social_icon"
+          ><i class="fa-brands fa-youtube"></i><span class="social_text">vabene1111</span></span
+        >
+        <span id="twitter" class="social_icon"
+          ><i class="fa-brands fa-twitter"></i><span class="social_text">PanthorDE</span></span
+        >
+        <!--<span id="instagram" class="social_icon"><i class="fa-brands fa-discord"></i></span>-->
+      </div>
+      <div class="div3">
+        <h4>
+          AKTUELLER STREAM<br />
+          <span id="dyn_project">&#60;STREAM&#62;</span>
+        </h4>
+      </div>
+    </div>
+  </footer>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery.min.js"></script>
+  <!-- Execute some code -->
+  <script src="../../libs/sleep.util.js"></script>
+  <script>
+    $(document).ready(function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('name')) $('#dyn_streamer_name').text(urlParams.get('name').toUpperCase());
+      if (urlParams.has('rank')) $('#dyn_streamer_rank').text(urlParams.get('rank').toUpperCase());
+      if (urlParams.has('img')) $('#dyn_streamer_pic').attr('src', urlParams.get('img'));
+      if (urlParams.has('stream')) $('#dyn_project').text(urlParams.get('stream').toUpperCase());
+
+      const container = $('.div2');
+      const elements = container.find('.social_icon');
+      let currentIndex = 0;
+
+      function loopThroughElements() {
+        elements.eq(currentIndex).addClass('social_active').siblings().removeClass('social_active');
+        currentIndex = (currentIndex + 1) % elements.length;
+      }
+
+      async function startLoop() {
+        while (true) {
+          elements.addClass('social_show');
+          await sleep(15.5 * 1000);
+          elements.removeClass('social_show');
+          loopThroughElements();
+          await sleep(8.5 * 1000);
+          elements.removeClass('social_active');
+        }
+      }
+
+      async function performTask() {
+        return new Promise((resolve) => {
+          loopThroughElements();
+        });
+      }
+
+      startLoop();
+    });
+  </script>
+</body>

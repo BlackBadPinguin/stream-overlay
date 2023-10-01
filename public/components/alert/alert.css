@@ -1,0 +1,152 @@
+#alerts {
+  width: 20%;
+  min-width: 350px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 2rem;
+  margin-left: auto;
+}
+
+.alert {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  padding: 1rem;
+  border-radius: 12px;
+  background-color: #171717;
+}
+
+.alert + .alert {
+  margin-top: 1rem;
+}
+
+.alert-icon-box {
+  position: absolute;
+  top: -1rem;
+  left: -2rem;
+  aspect-ratio: 1/1;
+  width: 90px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('../../assets/hexagon.png');
+  background-size: contain;
+}
+
+.alert-icon {
+  font-size: 2rem;
+}
+
+.alert-content {
+  margin-left: calc(90px - 3rem);
+  overflow: hidden;
+  text-wrap: nowrap;
+}
+
+.alert-title {
+  margin: 0;
+}
+
+.alert-message {
+  margin: 0.5rem 0 0;
+}
+.alert-message.none {
+  display: none;
+}
+
+.rankBadge {
+  position: relative;
+  top: -3px;
+  width: -webkit-fit-content;
+  width: -moz-fit-content;
+  width: fit-content;
+  font-size: 10px;
+  color: #ffffff;
+  border-radius: 4px;
+  padding: 2px 5px;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: inline-flex;
+  -webkit-align-items: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  background-color: #2b2b2b;
+  -webkit-flex: auto;
+  -ms-flex: auto;
+  flex: auto;
+  margin: 2px;
+}
+.rankBadge-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #e23f2b;
+}
+
+.newAlert {
+  background-color: #171717;
+  color: #ffffff !important;
+  border-radius: 10px;
+  min-width: 420px; /* 500px */
+  max-width: 470px;
+  margin: 15px;
+  padding-right: 3px;
+  padding-bottom: 3px;
+  padding-left: 0px;
+  padding-top: 0px;
+  display: flex;
+  height: 100px;
+  z-index: 9991;
+}
+
+.newAlert > h5 {
+  font-size: 25pt;
+  font-weight: bolder;
+  line-height: 100%;
+  overflow-x: visible;
+}
+.newAlert > .newAlertText {
+  padding-top: 10px;
+  padding-right: 20px;
+  /*padding-left: 15px;
+      left: -95px;*/
+  position: relative;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  left: -10px;
+}
+.newAlertText > .newAlertSubText {
+  font-size: 18pt;
+  font-weight: normal;
+  white-space: normal;
+  line-height: 15pt;
+}
+.newAlertIcon {
+  font-size: 35pt;
+  /*padding: 10px;
+      padding-left: 15px;
+      padding-right: 15px;*/
+  margin: 0px;
+  text-align: center;
+  top: -65px;
+  position: relative;
+  left: 27px;
+  font-size: 30pt;
+  z-index: 105;
+}
+
+.alertImageBox {
+  top: -16px;
+  position: relative;
+  left: -15px;
+  z-index: 100;
+}
