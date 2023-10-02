@@ -30,6 +30,9 @@ export class ChatBot {
 
   public static getCommands(): BotCommand[] {
     return [
+      createBotCommand('alert', () => {
+        io.emit('twitchEvent', 'follower', 'demo');
+      }),
       createBotCommand('ping', (params, { reply }) => {
         reply(`pong`);
       }),

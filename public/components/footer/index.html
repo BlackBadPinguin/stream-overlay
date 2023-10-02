@@ -21,7 +21,6 @@
 <body>
   <footer>
     <span class="serverURL">PANTHOR.DE</span>
-    <img src="../../assets/hexagon_panthor.png" class="panthor_hexagon" />
     <div class="parent">
       <div class="div1">
         <div id="profileImage">
@@ -52,16 +51,20 @@
           AKTUELLER STREAM<br />
           <span id="dyn_project">&#60;STREAM&#62;</span>
         </h4>
+        <img src="../../assets/hexagon_panthor.png" class="panthor_hexagon" />
       </div>
     </div>
   </footer>
 
   <!-- jQuery -->
   <script src="https://code.jquery.com/jquery.min.js"></script>
+  <!-- SocketIO -->
+  <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
   <!-- Execute some code -->
   <script src="../../libs/sleep.util.js"></script>
   <script>
     $(document).ready(function () {
+      const socket = io();
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has('name')) $('#dyn_streamer_name').text(urlParams.get('name').toUpperCase());
       if (urlParams.has('rank')) $('#dyn_streamer_rank').text(urlParams.get('rank').toUpperCase());
@@ -95,6 +98,14 @@
       }
 
       startLoop();
+
+      socket.on('update', function (type, data) {
+        switch (type) {
+          case 'topic':
+            $('#dyn_project').text(data.toUpperCase());
+            break;
+        }
+      });
     });
   </script>
 </body>

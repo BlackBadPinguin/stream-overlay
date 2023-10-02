@@ -1,0 +1,106 @@
+<head>
+  <!-- FontAwesome -->
+  <link
+    href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"
+    rel="stylesheet"
+    type="text/css"
+  />
+  <script src="https://kit.fontawesome.com/e59294cd4b.js" crossorigin="anonymous"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet"
+  />
+  <!-- Custom -->
+  <link rel="stylesheet" href="../base.css" />
+  <link rel="stylesheet" href="./timer.css" />
+</head>
+<body>
+  <main class="timer">
+    <h1 class="title text-shadow">Stream startet</h1>
+    <h3 class="subtitle text-shadow">Gleich geht es los!</h3>
+    <div class="progress-container">
+      <div class="progress-bar" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+        <div id="bar" class="progress-bar-inner"></div>
+      </div>
+      <p id="timer"></p>
+    </div>
+  </main>
+
+  <main class="waiting">
+    <div>
+      <img class="floating-element" src="../../assets/hexagon_panthor.png" />
+      <h1 class="title text-shadow">Warten auf Streamer....</h1>
+    </div>
+  </main>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery.min.js"></script>
+  <!-- SocketIO -->
+  <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+  <!-- Execute some code -->
+  <script src="../../libs/sleep.util.js"></script>
+  <script>
+    $(document).ready(function () {
+      const socket = io();
+      const urlParams = new URLSearchParams(window.location.search);
+      const time = Number(urlParams.get('time') ?? 5) * 60;
+      const title = urlParams.get('title');
+      const subtitle = urlParams.get('subtitle');
+
+      if (title) {
+        document.querySelector('.timer .title').textContent = title;
+      }
+
+      if (subtitle) {
+        document.querySelector('.timer .subtitle').textContent = subtitle;
+      }
+
+      startTimer(time);
+
+      /**
+       * @param {number} duration
+       */
+      async function startTimer(duration) {
+        const timer = document.querySelector('#timer');
+        const progressBar = document.querySelector('#bar');
+        const waiting = document.querySelector('.waiting');
+
+        if (!timer || !progressBar) return;
+        progressBar.style.width = '0%';
+
+        let timeLeft = duration;
+        const interval = setInterval(() => {
+          --timeLeft;
+          let minutes = parseInt(timeLeft / 60, 10);
+          let seconds = parseInt(timeLeft % 60, 10);
+          minutes = minutes < 10 ? '0' + minutes : minutes;
+          seconds = seconds < 10 ? '0' + seconds : seconds;
+
+          const updatedProgressBarWidth = (1 - timeLeft / duration) * 100 + '%';
+          if (Number(updatedProgressBarWidth.substring(0, updatedProgressBarWidth.length - 1)) >= 99) {
+            progressBar.style.borderTopRightRadius = '8px';
+            progressBar.style.borderBottomRightRadius = '8px';
+          }
+          progressBar.style.width = updatedProgressBarWidth;
+          timer.textContent = minutes + ':' + seconds;
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            waiting.classList.add('show');
+          }
+        }, 1000);
+      }
+
+      socket.on('update', async function (type, data) {
+        switch (type) {
+          case 'time':
+            await sleep(700);
+            startTimer(60 * data);
+            break;
+        }
+      });
+    });
+  </script>
+</body>

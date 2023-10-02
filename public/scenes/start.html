@@ -86,21 +86,29 @@
 
 <script>
   $(document).ready(function () {
-    let timer;
-    let int;
+    let startTime = 5 * 60;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('time')) {
+      let urlTimeValue = Number(urlParams.get('time'));
+      startTime = urlTimeValue * 60;
+    }
+    var timer;
+    var int;
     async function startTimer(duration) {
+      console.log(startTimer);
       $('#progress').hide();
       $('#countdown').hide();
       $('#intro').hide();
       $('#intro_over').hide();
       clearInterval(int);
-      let display = document.querySelector('#timer');
-      let bar = document.querySelector('#starting_bar');
-      let video = document.querySelector('#intro');
+      var display = document.querySelector('#timer');
+      var bar = document.querySelector('#starting_bar');
+      var video = document.querySelector('#intro');
       timer = duration;
-      let minutes, seconds;
+      var minutes, seconds;
       bar.style.width = '0%';
       int = setInterval(async function () {
+        console.log('test');
         minutes = parseInt(timer / 60, 10);
         seconds = parseInt(timer % 60, 10);
 
@@ -126,6 +134,8 @@
       $('#progress').fadeIn();
       $('#countdown').fadeIn();
     }
+
+    startTimer(startTime);
 
     document.getElementById('intro').addEventListener(
       'ended',

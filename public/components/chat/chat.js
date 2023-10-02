@@ -8,7 +8,7 @@ async function appendChatMsg(user, message) {
   const msgId = Math.floor(Math.random() * 1001);
   const messages = $('#chat-messages');
   const msgContainer = $('#chat-msg-container');
-  msgContainer.prepend(`<p id="msg_${msgId}" class="chat-message" style="border: solid ${borderColor};">
+  msgContainer.prepend(`<p id="msg_${msgId}" class="chat-message">
       <strong>${user}</strong><br />
       <span>${message}</span>
     </p>`);
