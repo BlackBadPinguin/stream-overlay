@@ -29,6 +29,13 @@
     </div>
   </main>
 
+  <main class="intro hide">
+    <video>
+      <source src="../../assets/Panthor_Intro.mp4" type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+  </main>
+
   <main class="waiting">
     <div>
       <img class="floating-element" src="../../assets/hexagon_panthor.png" />
@@ -43,12 +50,16 @@
   <!-- Execute some code -->
   <script src="../../libs/sleep.util.js"></script>
   <script>
-    $(document).ready(function () {
+    $(document).ready(() => {
       const socket = io();
       const urlParams = new URLSearchParams(window.location.search);
       const time = Number(urlParams.get('time') ?? 5) * 60;
       const title = urlParams.get('title');
       const subtitle = urlParams.get('subtitle');
+
+      const introContainer = document.querySelector('.intro');
+      const introVideo = document.querySelector('.intro video');
+      const waiting = document.querySelector('.waiting');
 
       if (title) {
         document.querySelector('.timer .title').textContent = title;
@@ -66,7 +77,6 @@
       async function startTimer(duration) {
         const timer = document.querySelector('#timer');
         const progressBar = document.querySelector('#bar');
-        const waiting = document.querySelector('.waiting');
 
         if (!timer || !progressBar) return;
         progressBar.style.width = '0%';
@@ -88,10 +98,22 @@
           timer.textContent = minutes + ':' + seconds;
           if (timeLeft <= 0) {
             clearInterval(interval);
-            waiting.classList.add('show');
+            document.querySelector('main.timer').classList.add('hide');
+
+            introContainer.classList.toggle('hide');
+            introVideo.currentTime = 0;
+            introVideo.volume = 0;
+            introVideo.play();
           }
         }, 1000);
       }
+
+      introVideo.addEventListener('ended', () => {
+        introVideo.currentTime = 0;
+        introVideo.pause();
+        introContainer.classList.toggle('hide');
+        waiting.classList.add('show');
+      });
 
       socket.on('update', async function (type, data) {
         switch (type) {

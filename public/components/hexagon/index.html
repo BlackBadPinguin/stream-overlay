@@ -1,0 +1,127 @@
+<head>
+  <!-- FontAwesome -->
+  <link
+    href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"
+    rel="stylesheet"
+    type="text/css"
+  />
+  <script src="https://kit.fontawesome.com/e59294cd4b.js" crossorigin="anonymous"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&amp;display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet"
+  />
+  <!-- AnimateCSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <!-- Custom -->
+  <link rel="stylesheet" href="../base.css" />
+  <link rel="stylesheet" href="./alert.css" />
+</head>
+<body>
+  <div id="alerts"></div>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery.min.js"></script>
+  <!-- SocketIO -->
+  <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+  <!-- Execute some code -->
+  <script src="../../libs/sleep.util.js"></script>
+  <script src="../../libs/play_audio.util.js"></script>
+  <script>
+    const socket = io();
+
+    const animateCSS = (element, animation, prefix = 'animate__') => {
+      return new Promise((resolve, reject) => {
+        const animationName = `${prefix}${animation}`;
+        const node = document.querySelector(element);
+
+        node.classList.add(`${prefix}animated`, animationName);
+
+        // When the animation ends, we clean the classes and resolve the Promise
+        function handleAnimationEnd(event) {
+          event.stopPropagation();
+          node.classList.remove(`${prefix}animated`, animationName);
+          resolve('ended');
+        }
+
+        node.addEventListener('animationend', handleAnimationEnd, { once: true });
+      });
+    };
+
+    socket.on('update', (type, data) => {
+      switch (type) {
+        case 'hint':
+          if ($('.alert.hint').length > 0) {
+            animateCSS('.alert.hint', 'fadeOutRight').then((message) => {
+              $('#alerts').find('.alert.hint:first').remove();
+              animateCSS('.alert', 'slideInUp');
+            });
+          }
+          if (/*$( '.mainAlert[data-id="' + data[1] + '"]' ).length === 0 &&*/ !(data[0] === 'none')) {
+            addAlert(data[1], data[2], data[3], 0, true);
+          }
+          break;
+      }
+    });
+
+    socket.on('twitchEvent', function (type, data) {
+      switch (type) {
+        case 'follower':
+          addAlert(data, 'Neuer Follower', 'fa-solid fa-heart', 10);
+          playAudio('../../assets/follow-sound.mp3', 0.1);
+          break;
+        case 'sub':
+          addAlert(data, 'Neuer Sub', 'fa-solid fa-heart', 10);
+          playAudio('../../assets/sub-sound.mp3', 0.1);
+          break;
+        case 're-sub':
+          addAlert(data, 'Re-sub', 'fa-solid fa-heart', 10);
+          playAudio('../../assets/sub-sound.mp3', 0.1);
+          break;
+        case 'gift-sub':
+          addAlert(data, 'Sub verschenkt', 'fa-solid fa-heart', 10);
+          playAudio('../../assets/sub-sound.mp3', 0.1);
+          break;
+        // case 'raid':
+        //   raidAnimation(data[0], data[1]);
+        //   break;
+      }
+    });
+
+    /**
+     *
+     * @param {string} title
+     * @param {string} message
+     * @param {string} icon FontAwesome icon class-names
+     * @param {number} duration How long should the
+     * @param {boolean} hint
+     * @returns {void}
+     */
+    async function addAlert(title, message, icon, duration = 5, hint = false) {
+      $('#alerts').append(`<div class="alert" data-id="${title}">
+          <div class="alert-icon-box">
+            <i class="alert-icon ${icon}"></i>
+          </div>
+          <div class="alert-content">
+            <h2 class="alert-title">${title}</h2>
+            <h4 class="${message.length > 0 ? 'alert-message' : 'alert-message none'}">${message}</h4>
+          </div>
+        </div>`);
+
+      animateCSS('.alert[data-id="' + title + '"]', 'fadeInRight');
+
+      if (hint) {
+        $('.alert[data-id="' + title + '"]').addClass('alert-hint');
+      }
+      if (duration > 0) {
+        await sleep(duration * 1000);
+        animateCSS('.alert[data-id="' + title + '"]', 'fadeOutRight').then((message) => {
+          $('.alert[data-id="' + title + '"]').remove();
+        });
+      }
+    }
+  </script>
+</body>

@@ -51,3 +51,7 @@
 #chat-container .chat-message:not(:last-child) {
   margin-bottom: 0.75rem;
 }
+
+.chat-message {
+  font-size: 115%;
+}
