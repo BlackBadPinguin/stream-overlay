@@ -1,0 +1,8 @@
+#element-container {
+  width: 100%;
+  height: 100;
+}
+
+#element-container > .floating-element {
+  filter: invert(60%) sepia(54%) saturate(5688%) hue-rotate(330deg) brightness(100%) contrast(101%);
+}
