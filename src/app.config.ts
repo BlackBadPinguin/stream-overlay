@@ -23,6 +23,8 @@ export type AppConfig = {
   };
   listener: {
     autoStart: boolean;
+    autoRestart: boolean;
+    role: string;
   };
 };
 
@@ -71,6 +73,8 @@ export const AppConfig: AppConfig = {
   },
   listener: {
     autoStart: true,
+    autoRestart: false,
+    role: '1164253679956795463',
   },
 };
 

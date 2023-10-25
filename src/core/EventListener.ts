@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { ApiClient as TwurpleApiClient } from '@twurple/api';
 import { EventSubWsListener } from '@twurple/eventsub-ws';
-import { AuthManager } from '.';
+import { AppEventEmitter, AuthManager } from '.';
 import { LogCategory, log } from '../middleware';
 import { TWITCH_CHANNEL, TWITCH_CHANNEL_ID, io } from '..';
+import { AppConfig } from '../app.config';
 
 export class EventListener {
   private static instance: EventSubWsListener;
@@ -50,7 +51,7 @@ export class EventListener {
             const post = await axios.post(
               DISCORD_WEBHOOK_URL,
               {
-                content: `Hey, wir streamen jetzt auch auf Twitch! Schaut gerne vorbei...`,
+                content: `Hey <@&${AppConfig.listener.role}>, wir streamen jetzt auch auf Twitch! Schaut gerne vorbei...`,
                 embeds: [
                   {
                     title: stream.title,
@@ -94,6 +95,9 @@ export class EventListener {
             const errorMsg = error instanceof Error ? error.message : error;
             AuthManager.getInstance().updateBotStatus('eventListener', { status: 'STOPPED', reason: errorMsg });
             log('INFO', LogCategory.EventListener, `EventListener disconnected! More ${errorMsg}`);
+            if (AppConfig.listener.autoRestart) {
+              AppEventEmitter.emit('listener:start');
+            }
 
             // EventListener.stop();
             // log('WARN', LogCategory.EventListener, `EventListener stopped!`);
