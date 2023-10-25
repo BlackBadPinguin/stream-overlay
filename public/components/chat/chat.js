@@ -13,9 +13,10 @@ async function appendChatMsg(user, message) {
       <span>${message}</span>
     </p>`);
 
-  if (msgContainer.outerHeight() > messages.outerHeight()) {
-    msgContainer.children(':first').fadeOut(1000);
-    await sleep(1000);
+  const time = 1000 * 0;
+  while (msgContainer.outerHeight() > messages.outerHeight()) {
+    msgContainer.children(':first').fadeOut(time);
+    await sleep(time);
     msgContainer.children(':first').remove();
   }
 
