@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { ApiClient as TwurpleApiClient } from '@twurple/api';
 import { EventSubWsListener } from '@twurple/eventsub-ws';
-import { AppEventEmitter, AuthManager } from '.';
+import { AuthManager } from '.';
 import { LogCategory, log } from '../middleware';
 import { TWITCH_CHANNEL, TWITCH_CHANNEL_ID, io } from '..';
 import { AppConfig } from '../app.config';
@@ -51,7 +51,7 @@ export class EventListener {
             const post = await axios.post(
               DISCORD_WEBHOOK_URL,
               {
-                content: `Hey <@&${AppConfig.listener.role}>, wir streamen jetzt auch auf Twitch! Schaut gerne vorbei...`,
+                content: `Hey <@&${AppConfig.listener.role}>, wir streamen jetzt auf Twitch! Schaut gerne vorbei...`,
                 embeds: [
                   {
                     title: stream.title,
@@ -80,24 +80,19 @@ export class EventListener {
           log('INFO', LogCategory.EventListener, event.broadcasterName + ' is now offline!');
         });
 
-        // @ts-ignore
-        EventListener.onUserSocketConnect((e) => {
+        EventListener.onUserSocketConnect((userId: string) => {
           AuthManager.getInstance().updateBotStatus('eventListener', {
             status: 'RUNNING',
             reason: 'Connected successfully',
           });
-          log('INFO', LogCategory.EventListener, `EventListener connected! More ${JSON.stringify(e)}`);
+          log('INFO', LogCategory.EventListener, `EventListener connected! More ${userId}`);
         });
 
-        // @ts-ignore
-        EventListener.onUserSocketDisconnect((userId, error) => {
+        EventListener.onUserSocketDisconnect((userId: string, error: Error) => {
           try {
-            const errorMsg = error instanceof Error ? error.message : error;
+            const errorMsg = error.message;
             AuthManager.getInstance().updateBotStatus('eventListener', { status: 'STOPPED', reason: errorMsg });
             log('INFO', LogCategory.EventListener, `EventListener disconnected! More ${errorMsg}`);
-            if (AppConfig.listener.autoRestart) {
-              AppEventEmitter.emit('listener:start');
-            }
 
             // EventListener.stop();
             // log('WARN', LogCategory.EventListener, `EventListener stopped!`);
