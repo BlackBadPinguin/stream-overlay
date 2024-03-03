@@ -41,7 +41,7 @@ AppEventEmitter.on('listener:start', async () => {
 });
 
 AppEventEmitter.on('listener:stop', async () => {
-  logger.log("Invoked '{event}'", { category: LogCategory.EventListener, event: 'listener:stop' });
+  logger.info("Invoked '{event}'", { category: LogCategory.EventListener, event: 'listener:stop' });
   try {
     (await EventListener.getInstance())?.stop();
   } catch (error) {
@@ -52,7 +52,7 @@ AppEventEmitter.on('listener:stop', async () => {
 });
 
 AppEventEmitter.on('bot:start', async () => {
-  logger.log("Invoked '{event}'", { category: LogCategory.ChatBot, event: 'bot:start' });
+  logger.info("Invoked '{event}'", { category: LogCategory.ChatBot, event: 'bot:start' });
   try {
     if (AuthManager.getInstance().getBotStatus().bot.status == 'RUNNING') {
       return;

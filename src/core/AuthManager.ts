@@ -171,7 +171,7 @@ export class AuthManager {
       });
 
       rap.onRefresh(([userId, newToken]) => {
-        logger.log("Refresh token for ' + userId + ' was refreshed", {
+        logger.info("Refresh token for ' + userId + ' was refreshed", {
           category: LogCategory.AccessToken,
           userId: userId,
         });
