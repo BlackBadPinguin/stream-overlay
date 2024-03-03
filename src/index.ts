@@ -1,11 +1,10 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { AppConfig } from './app.config';
-import { LogCategory, log, logMiddleware, secure } from './middleware';
+import { LogCategory, logger, logMiddleware, secure } from './middleware';
 import { AuthManager, emit } from './core';
 
 /**
@@ -17,7 +16,7 @@ const MISSING_ENVIRONMENT_VARIABLES = AppConfig.environmentVariables.filter((var
   }
 });
 if (MISSING_ENVIRONMENT_VARIABLES.length >= 1) {
-  log(
+  console.log(
     'ERROR',
     LogCategory.Setup,
     JSON.stringify({
@@ -50,11 +49,11 @@ app.get('/', async (req, res) => {
   if (!scope) return res.json({ message: 'scope is not provided' });
 
   AuthManager.getInstance().setCode(code as string);
-  log('INFO', LogCategory.AuthCode, code);
+  logger.info(code.toString(), { category: LogCategory.AuthCode });
 
   const [accessToken, error] = await AuthManager.getInstance().obtainAccessToken(CLIENT_ID, CLIENT_SECRET);
   if (error) {
-    log('ERROR', LogCategory.AccessToken, error);
+    logger.error(error.toString(), { category: LogCategory.AccessToken });
     return res.json({ message: "Couldn't retrieve an access-token" });
   }
   if (!accessToken) return res.json({ message: 'Received an empty access-token' });
@@ -127,7 +126,10 @@ app.get('/app/listener/stop', secure(ENDPOINT_PASSWORD), async (req, res) => {
 });
 
 server.listen(AppConfig.port, async () => {
-  log('LOG', LogCategory.Setup, 'Server listening on localhost:' + AppConfig.port);
+  logger.info('Server listening on http://localhost:{port}', {
+    port: AppConfig.port,
+    category: LogCategory.Setup,
+  });
 
   if (AppConfig.chatBot.autoStart) {
     emit('bot:start');

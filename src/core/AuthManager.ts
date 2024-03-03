@@ -3,7 +3,7 @@ dotenv.config();
 import { AppConfig } from '../app.config';
 import type { DataWithError } from '../types';
 import { RefreshingAuthProvider, type AccessToken, exchangeCode, getExpiryDateOfAccessToken } from '@twurple/auth';
-import { LogCategory, log } from '../middleware';
+import { LogCategory, logger } from '../middleware';
 import path from 'path';
 import fs from 'fs';
 import { format, isFuture } from 'date-fns';
@@ -31,7 +31,7 @@ export class AuthManager {
     if (!exists) return;
     const currentFilesContent = this.getTokensFile();
     if (currentFilesContent && currentFilesContent.current) {
-      log('LOG', LogCategory.AccessToken, 'Retrieving access-token from local tokens.json');
+      logger.info('Retrieving access-token from local tokens.json', { category: LogCategory.AccessToken });
       this.setAccessToken(currentFilesContent.current, false);
     }
   }
@@ -63,15 +63,17 @@ export class AuthManager {
     if (typeof accessToken !== 'string') {
       const endDate = getExpiryDateOfAccessToken(accessToken);
       if (!endDate) {
-        return log('WARN', LogCategory.AccessToken, `${accessToken.accessToken} doesn't have expiry information`);
+        return logger.warn("{accessToken} doesn't have expiry information", {
+          category: LogCategory.AccessToken,
+          accessToken: accessToken.accessToken,
+        });
       }
 
       if (!isFuture(endDate)) {
-        return log(
-          'WARN',
-          LogCategory.AccessToken,
-          `${accessToken.accessToken} is already expired and the token won't be saved`
-        );
+        return logger.warn("{accessToken.accessToken} is already expired and the token won't be saved", {
+          category: LogCategory.AccessToken,
+          accessToken: accessToken.accessToken,
+        });
       }
     }
 
@@ -95,23 +97,26 @@ export class AuthManager {
 
         fs.writeFileSync(filePath, JSON.stringify(fileContent), { encoding: 'utf8' });
       } catch (error) {
-        log('ERROR', LogCategory.AccessToken, error as Error);
+        logger.error((error as Error).message, { category: LogCategory.AccessToken });
       }
     }
 
     if (typeof accessToken !== 'string') {
       const expireDate = getExpiryDateOfAccessToken(accessToken);
       if (!expireDate) return;
-      log(
-        'INFO',
-        LogCategory.AccessToken,
-        'New access-token is valid until ' + format(expireDate, 'dd.MM.yy HH:mm:ss')
-      );
+      logger.info('New access-token is valid until {expiration}', {
+        category: LogCategory.AccessToken,
+        expiration: format(expireDate, 'dd.MM.yy HH:mm:ss'),
+      });
     }
 
     let currentToken = typeof this.accessToken === 'string' ? this.accessToken : this.accessToken?.accessToken,
       newToken = typeof accessToken === 'string' ? accessToken : accessToken.accessToken;
-    log('INFO', LogCategory.AccessToken, `Updated access-token from ${currentToken} to ${newToken}`);
+    logger.info('Updated access-token from {currentToken} to {newToken}', {
+      category: LogCategory.AccessToken,
+      currentToken: currentToken,
+      newToken: newToken,
+    });
     this.accessToken = accessToken;
   }
 
@@ -142,7 +147,7 @@ export class AuthManager {
     try {
       data = JSON.parse(fs.readFileSync(path, 'utf8')) as TokensFile;
     } catch (error) {
-      log('ERROR', LogCategory.AccessToken, error as Error);
+      logger.error((error as Error).message, { category: LogCategory.AccessToken });
     } finally {
       return data;
     }
@@ -166,12 +171,18 @@ export class AuthManager {
       });
 
       rap.onRefresh(([userId, newToken]) => {
-        log('LOG', LogCategory.RefreshingAuthProvider, 'Refresh token for ' + userId + ' was refreshed');
+        logger.log("Refresh token for ' + userId + ' was refreshed", {
+          category: LogCategory.AccessToken,
+          userId: userId,
+        });
         AuthManager.getInstance().setAccessToken(newToken);
       });
 
       rap.onRefreshFailure(([userId]) => {
-        log('ERROR', LogCategory.RefreshingAuthProvider, "Couldn't refresh the access-token for " + userId);
+        logger.error("Couldn'nt refresh the access-token for {userId}", {
+          category: LogCategory.AccessToken,
+          userId: userId,
+        });
       });
 
       this.authProviderInstance = rap;
@@ -186,9 +197,9 @@ export class AuthManager {
     }
     try {
       await AuthManager.getAuthProviderInstance().addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
-      log('LOG', LogCategory.AccessToken, 'Added user to access-token');
+      logger.info('Added user to access-token', { category: LogCategory.AccessToken });
     } catch (error) {
-      log('ERROR', LogCategory.AccessToken, error as Error);
+      logger.error((error as Error).message, { category: LogCategory.AccessToken });
     }
   }
 
@@ -228,6 +239,7 @@ export class AuthManager {
       }
       return [accessToken, null];
     } catch (error) {
+      logger.error((error as Error).message, { category: LogCategory.AccessToken });
       return [null, error as Error];
     }
   }

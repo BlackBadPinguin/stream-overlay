@@ -25,12 +25,24 @@ export type AppConfig = {
     autoStart: boolean;
     role: string;
   };
+  log: {
+    apiUrl: string;
+    apiKey: string;
+  };
 };
 
 export const AppConfig: AppConfig = {
   // TODO: Convert into branded type
   environment: determineRuntimeEnvironment(),
-  environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNEL', 'TWITCH_CHANNEL_ID', 'ENDPOINT_PASSWORD'],
+  environmentVariables: [
+    'CLIENT_ID',
+    'CLIENT_SECRET',
+    'TWITCH_CHANNEL',
+    'TWITCH_CHANNEL_ID',
+    'ENDPOINT_PASSWORD',
+    'LOG_API_URL',
+    'LOG_API_KEY',
+  ],
   redirectUri: determineRuntimeEnvironment() === 'PROD' ? 'https://overlay.tklein.it' : 'http://localhost',
   scopes: [
     'channel:manage:broadcast',
@@ -73,6 +85,10 @@ export const AppConfig: AppConfig = {
   listener: {
     autoStart: true,
     role: '1164253679956795463',
+  },
+  log: {
+    apiUrl: process.env.LOG_API_URL as string,
+    apiKey: process.env.LOG_API_KEY as string,
   },
 };
 

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { AuthManager, ChatBot, EventListener } from '.';
-import { LogCategory, log } from '../middleware';
+import { LogCategory, logger } from '../middleware';
 import { TWITCH_CHANNEL_ID } from '..';
 
 export type Events = 'listener:start' | 'listener:stop' | 'bot:start' | 'bot:stop';
@@ -12,17 +12,19 @@ export function emit(event: Events, ...args: any[]) {
 }
 
 AppEventEmitter.on('listener:start', async () => {
-  log('LOG', LogCategory.EventListener, "Invoked 'listener:start'");
+  logger.info("Invoked '{event}'", { category: LogCategory.EventListener, event: 'listener:start' });
   try {
     if (AuthManager.getInstance().getBotStatus().eventListener.status == 'RUNNING') {
-      return log('INFO', LogCategory.EventListener, "Didn't start listener becuase it's already up running");
+      return logger.warn("Didn't start listener becuase it's already up running,", {
+        category: LogCategory.EventListener,
+      });
     }
 
     const { exists } = AuthManager.getInstance().tokensFileExist();
     if (!exists) {
       const msg = "Didn't start listener because no access-token were provided";
       AuthManager.getInstance().updateBotStatus('eventListener', { status: 'STOPPED_NO_ACCESS_TOKEN', reason: msg });
-      return log('WARN', LogCategory.EventListener, msg);
+      return logger.warn(msg, { category: LogCategory.EventListener });
     }
 
     const AuthProvider = AuthManager.getAuthProviderInstance();
@@ -32,21 +34,25 @@ AppEventEmitter.on('listener:start', async () => {
 
     (await EventListener.getInstance())?.start();
   } catch (error) {
-    log('ERROR', LogCategory.EventListener, error instanceof Error ? error.message : JSON.stringify(error));
+    logger.error(error instanceof Error ? error.message : JSON.stringify(error), {
+      category: LogCategory.EventListener,
+    });
   }
 });
 
 AppEventEmitter.on('listener:stop', async () => {
-  log('LOG', LogCategory.EventListener, "Invoked 'listener:stop'");
+  logger.log("Invoked '{event}'", { category: LogCategory.EventListener, event: 'listener:stop' });
   try {
     (await EventListener.getInstance())?.stop();
   } catch (error) {
-    log('ERROR', LogCategory.EventListener, error instanceof Error ? error.message : JSON.stringify(error));
+    logger.error(error instanceof Error ? error.message : JSON.stringify(error), {
+      category: LogCategory.EventListener,
+    });
   }
 });
 
 AppEventEmitter.on('bot:start', async () => {
-  log('LOG', LogCategory.ChatBot, "Invoked 'bot:start'");
+  logger.log("Invoked '{event}'", { category: LogCategory.ChatBot, event: 'bot:start' });
   try {
     if (AuthManager.getInstance().getBotStatus().bot.status == 'RUNNING') {
       return;
@@ -56,7 +62,7 @@ AppEventEmitter.on('bot:start', async () => {
     if (!exists) {
       const msg = "Didn't start chatbot because no access-token were provided";
       AuthManager.getInstance().updateBotStatus('bot', { status: 'STOPPED_NO_ACCESS_TOKEN', reason: msg });
-      return log('WARN', LogCategory.ChatBot, msg);
+      return logger.warn(msg, { category: LogCategory.ChatBot });
     }
 
     const AuthProvider = AuthManager.getAuthProviderInstance();
@@ -66,6 +72,8 @@ AppEventEmitter.on('bot:start', async () => {
         .then(() => ChatBot.init());
     } else ChatBot.init();
   } catch (error) {
-    log('ERROR', LogCategory.ChatBot, error instanceof Error ? error.message : JSON.stringify(error));
+    logger.error(error instanceof Error ? error.message : JSON.stringify(error), {
+      category: LogCategory.EventListener,
+    });
   }
 });
