@@ -1,13 +1,14 @@
 import axios from 'axios';
 import { ApiClient as TwurpleApiClient } from '@twurple/api';
 import { EventSubWsListener } from '@twurple/eventsub-ws';
-import { AuthManager } from '.';
+import { AuthManager } from './index';
 import { LogCategory, logger } from '../middleware';
-import { TWITCH_CHANNEL, TWITCH_CHANNEL_ID, io } from '..';
+import { TWITCH_CHANNEL, TWITCH_CHANNEL_ID, io } from '../index';
 import { AppConfig } from '../app.config';
 
 export class EventListener {
   private static instance: EventSubWsListener;
+  private static eventListenerLogger = logger.child({ class: EventListener.name, category: LogCategory.EventListener });
 
   /**
    *
@@ -28,23 +29,21 @@ export class EventListener {
 
       try {
         EventListener.onChannelFollow(TWITCH_CHANNEL_ID, TWITCH_CHANNEL_ID, (event) => {
-          logger.info('{user} now follows {channel}!', {
-            user: event.userName,
+          this.eventListenerLogger.info(`${event.userName} now follows ${TWITCH_CHANNEL}!`, {
             channel: TWITCH_CHANNEL,
-            category: LogCategory.EventListener,
           });
           io.emit('twitchEvent', 'follower', event.userName);
         });
 
         EventListener.onStreamOnline(TWITCH_CHANNEL_ID, async (event) => {
-          logger.info('{channel} is now live!', {
+          this.eventListenerLogger.info(`${TWITCH_CHANNEL} is now live!`, {
             channel: TWITCH_CHANNEL,
             category: LogCategory.DiscordNotification,
           });
           const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
           if (!DISCORD_WEBHOOK_URL) {
-            logger.warn(
-              "{channel} is now live, but no notifcation can be send because of the missing environment-variable 'DISCORD_WEBHOOK_URL'!",
+            this.eventListenerLogger.warn(
+              `${TWITCH_CHANNEL} is now live, but no notifcation can be send because of the missing environment-variable 'DISCORD_WEBHOOK_URL'!`,
               {
                 channel: TWITCH_CHANNEL,
                 category: LogCategory.DiscordNotification,
@@ -78,21 +77,18 @@ export class EventListener {
                 headers: { 'Content-Type': 'application/json' },
               }
             );
-            logger.info('Sent notification and received status {status}', {
+            this.eventListenerLogger.info(`Sent notification and received status ${post.status}`, {
               channel: post.status,
               category: LogCategory.DiscordNotification,
             });
           } catch (error) {
-            logger.error(JSON.stringify(error), {
-              category: LogCategory.DiscordNotification,
-            });
+            this.eventListenerLogger.error((error as Error).message, error);
           }
         });
 
         EventListener.onStreamOffline(TWITCH_CHANNEL_ID, (event) => {
-          logger.error('{channel} is now offline!', {
+          this.eventListenerLogger.error(`${event.broadcasterDisplayName} is now offline!`, {
             category: LogCategory.DiscordNotification,
-            channel: event.broadcasterDisplayName,
           });
         });
 
@@ -101,32 +97,23 @@ export class EventListener {
             status: 'RUNNING',
             reason: 'Connected successfully',
           });
-          logger.info('EventListener connected! More {userId}', {
-            category: LogCategory.EventListener,
-            userId: userId,
-          });
+          this.eventListenerLogger.info(`EventListener connected! More ${userId}`);
         });
 
         EventListener.onUserSocketDisconnect((userId: string, error: Error) => {
           try {
             const errorMsg = error.message;
             AuthManager.getInstance().updateBotStatus('eventListener', { status: 'STOPPED', reason: errorMsg });
-            logger.info('EventListener disconnected! More {userId}', {
-              category: LogCategory.EventListener,
-              userId: userId,
-            });
+            this.eventListenerLogger.info(`EventListener disconnected! More ${userId}`);
 
             // EventListener.stop();
             // log('WARN', LogCategory.EventListener, `EventListener stopped!`);
           } catch (error) {
-            logger.error('Something went wrong! More {error}', {
-              category: LogCategory.EventListener,
-              error: (error as Error).message,
-            });
+            this.eventListenerLogger.error((error as Error).message, error);
           }
         });
       } catch (error) {
-        logger.error('Something went wrong during initialisation. More {error}', {
+        this.eventListenerLogger.error('Something went wrong during initialisation. More {error}', {
           category: LogCategory.EventListener,
           error: (error as Error).message,
         });
@@ -142,9 +129,11 @@ export class EventListener {
    * @throws {Error}
    */
   public async start() {
-    if (AuthManager.getInstance().getBotStatus().eventListener.status === 'RUNNING') {
+    const authInstance = AuthManager.getInstance();
+
+    if (authInstance.getBotStatus().eventListener.status === 'RUNNING') {
       const msg = "EventListener is already listening and can't get initialized twice";
-      logger.warn(msg, { category: LogCategory.EventListener });
+      logger.warn(msg, { class: EventListener.name, category: LogCategory.EventListener });
       throw new Error(msg);
     }
 
@@ -155,9 +144,11 @@ export class EventListener {
    * @throws {Error}
    */
   public async stop() {
-    if (AuthManager.getInstance().getBotStatus().eventListener.status !== 'RUNNING') {
+    const authInstance = AuthManager.getInstance();
+
+    if (authInstance.getBotStatus().eventListener.status !== 'RUNNING') {
       const msg = "The EventListener isn't running and therefore can't get stopped";
-      logger.warn(msg, { category: LogCategory.EventListener });
+      logger.warn(msg, { class: EventListener.name, category: LogCategory.EventListener });
       throw new Error(msg);
     }
 

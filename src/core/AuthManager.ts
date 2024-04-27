@@ -25,13 +25,14 @@ export class AuthManager {
     bot: { status: 'STOPPED', reason: null },
     eventListener: { status: 'STOPPED', reason: null },
   };
+  private authLogger = logger.child({ class: AuthManager.name, category: LogCategory.AccessToken });
 
   constructor() {
     const { exists } = this.tokensFileExist();
     if (!exists) return;
     const currentFilesContent = this.getTokensFile();
     if (currentFilesContent && currentFilesContent.current) {
-      logger.info('Retrieving access-token from local tokens.json', { category: LogCategory.AccessToken });
+      this.authLogger.info('Retrieving access-token from local tokens.json');
       this.setAccessToken(currentFilesContent.current, false);
     }
   }
@@ -63,15 +64,13 @@ export class AuthManager {
     if (typeof accessToken !== 'string') {
       const endDate = getExpiryDateOfAccessToken(accessToken);
       if (!endDate) {
-        return logger.warn("{accessToken} doesn't have expiry information", {
-          category: LogCategory.AccessToken,
+        return this.authLogger.warn(accessToken + " doesn't have expiry information", {
           accessToken: accessToken.accessToken,
         });
       }
 
       if (!isFuture(endDate)) {
-        return logger.warn("{accessToken.accessToken} is already expired and the token won't be saved", {
-          category: LogCategory.AccessToken,
+        return this.authLogger.warn(accessToken.accessToken + " is already expired and the token won't be saved", {
           accessToken: accessToken.accessToken,
         });
       }
@@ -97,23 +96,19 @@ export class AuthManager {
 
         fs.writeFileSync(filePath, JSON.stringify(fileContent), { encoding: 'utf8' });
       } catch (error) {
-        logger.error((error as Error).message, { category: LogCategory.AccessToken });
+        this.authLogger.error((error as Error).message, Error);
       }
     }
 
     if (typeof accessToken !== 'string') {
       const expireDate = getExpiryDateOfAccessToken(accessToken);
       if (!expireDate) return;
-      logger.info('New access-token is valid until {expiration}', {
-        category: LogCategory.AccessToken,
-        expiration: format(expireDate, 'dd.MM.yy HH:mm:ss'),
-      });
+      this.authLogger.info(`New access-token is valid until '${format(expireDate, 'dd.MM.yy HH:mm:ss')}'!`);
     }
 
     let currentToken = typeof this.accessToken === 'string' ? this.accessToken : this.accessToken?.accessToken,
       newToken = typeof accessToken === 'string' ? accessToken : accessToken.accessToken;
-    logger.info('Updated access-token from {currentToken} to {newToken}', {
-      category: LogCategory.AccessToken,
+    this.authLogger.info(`Updated access-token from '${currentToken}' to '${newToken}'`, {
       currentToken: currentToken,
       newToken: newToken,
     });
@@ -147,7 +142,7 @@ export class AuthManager {
     try {
       data = JSON.parse(fs.readFileSync(path, 'utf8')) as TokensFile;
     } catch (error) {
-      logger.error((error as Error).message, { category: LogCategory.AccessToken });
+      this.authLogger.error((error as Error).message, error);
     } finally {
       return data;
     }
@@ -171,16 +166,14 @@ export class AuthManager {
       });
 
       rap.onRefresh(([userId, newToken]) => {
-        logger.info("Refresh token for ' + userId + ' was refreshed", {
-          category: LogCategory.AccessToken,
+        AuthManager.getInstance().authLogger.info(`Refresh-token for '${userId}' was refreshed!`, {
           userId: userId,
         });
         AuthManager.getInstance().setAccessToken(newToken);
       });
 
       rap.onRefreshFailure(([userId]) => {
-        logger.error("Couldn'nt refresh the access-token for {userId}", {
-          category: LogCategory.AccessToken,
+        AuthManager.getInstance().authLogger.error(`Couldn'nt refresh the access-token for '${userId}'!`, {
           userId: userId,
         });
       });
@@ -197,9 +190,9 @@ export class AuthManager {
     }
     try {
       await AuthManager.getAuthProviderInstance().addUserForToken(accessToken, [...AppConfig.scopes, 'chat']);
-      logger.info('Added user to access-token', { category: LogCategory.AccessToken });
+      AuthManager.getInstance().authLogger.info('Added user to access-token');
     } catch (error) {
-      logger.error((error as Error).message, { category: LogCategory.AccessToken });
+      AuthManager.getInstance().authLogger.error((error as Error).message, error);
     }
   }
 
@@ -239,7 +232,7 @@ export class AuthManager {
       }
       return [accessToken, null];
     } catch (error) {
-      logger.error((error as Error).message, { category: LogCategory.AccessToken });
+      AuthManager.getInstance().authLogger.error((error as Error).message, error);
       return [null, error as Error];
     }
   }

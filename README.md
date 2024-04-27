@@ -1,6 +1,6 @@
 # Stream Overlay
 
-[![Status](https://status.tklein.it/api/badge/15/status?style=for-the-badge)]() [![Uptime](https://status.tklein.it/api/badge/15/uptime?style=for-the-badge)]()
+[![Status](https://monitor.tools.tklein.it/api/badge/3/status?style=for-the-badge)]() [![Uptime](https://monitor.tools.tklein.it/api/badge/3/uptime?style=for-the-badge)]()
 
 ## ToC
 
@@ -8,18 +8,19 @@
   - [ToC](#toc)
   - [Getting started](#getting-started)
   - [Docker](#docker)
+  - [Logging](#logging)
+  - [FaQ](#faq)
+  - [Commands](#commands)
   - [Workflows](#workflows)
     - [Publish Docker Image](#publish-docker-image)
     - [Deploy Image](#deploy-image)
-  - [FaQ](#faq)
-  - [Commands](#commands)
 
 ## Getting started
 
 1. Clone the repository
 
    ```bash
-   git clone https://gitlab.panthor.de/Felix/stream-overlay.git
+   git clone git@github.com:PanthorDE/stream-overlay.git
    ```
 
 2. Set all required environment-variables as defined in the `.env.example`
@@ -52,29 +53,9 @@
    docker run -itd -v test-volume:/app/stream-overlay/data --env-file '.env' --restart on-failure:3 -p '8090:80' --name=stream-overlay docker pull ghcr.io/tklein1801/stream-overlay:latest
    ```
 
-## Workflows
+## Logging
 
-> Make sure that **the user** which executes the workflow **has permissions** to **manage docker volumes and docker containers**
-
-> The provided Github Personal Access Token need to have permission to read and write to the Github Package Registry
-
-### Publish Docker Image
-
-| Secrets  |   Variables   |
-| :------: | :-----------: |
-| `GH_PAT` | `IMAGE_NAME`  |
-|          | `DOCKER_USER` |
-
-### Deploy Image
-
-> Variables marked with `ENV-PROD` are defined in the enviroment `production`
-
-|          Secrets          |              Variables               |
-| :-----------------------: | :----------------------------------: |
-|   `SSH_HOST` (ENV-PROD)   |             `IMAGE_NAME`             |
-|   `SSH_USER` (ENV-PROD)   |            `DOCKER_USER`             |
-| `SSH_PASSWORD` (ENV-PROD) |     `CONTAINER_NAME` (ENV-PROD)      |
-|         `GH_PAT`          | `SERVER_ENV_FILE_LOCATION`(ENV-PROD) |
+If the logs should not only be displayed in the console but also sent to an external tool, a simple [Winston Transport](https://github.com/winstonjs/winston/blob/master/docs/transports.md) can be set up for this purpose. By setting the environment variable `BASELIME_API_KEY`, the pre-configured transport to `https://baselime.io` can be used.
 
 ## FaQ
 
@@ -166,3 +147,27 @@ https://overlay.tklein.it/static/index.html?...
 |   `topic`    | `topic <TOPIC>`  |        Change topic on your stream-overlay        |
 |    `time`    | `time <MINUTER>` |                Set timer/countdown                |
 |   `scene`    | `scene <SCENE>`  |             Switch your current scene             |
+
+## Workflows
+
+> Make sure that **the user** which executes the workflow **has permissions** to **manage docker volumes and docker containers**
+
+> The provided Github Personal Access Token need to have permission to read and write to the Github Package Registry
+
+### Publish Docker Image
+
+| Secrets  |   Variables   |
+| :------: | :-----------: |
+| `GH_PAT` | `IMAGE_NAME`  |
+|          | `DOCKER_USER` |
+
+### Deploy Image
+
+> Variables marked with `ENV-PROD` are defined in the enviroment `production`
+
+|          Secrets          |              Variables               |
+| :-----------------------: | :----------------------------------: |
+|   `SSH_HOST` (ENV-PROD)   |             `IMAGE_NAME`             |
+|   `SSH_USER` (ENV-PROD)   |            `DOCKER_USER`             |
+| `SSH_PASSWORD` (ENV-PROD) |     `CONTAINER_NAME` (ENV-PROD)      |
+|         `GH_PAT`          | `SERVER_ENV_FILE_LOCATION`(ENV-PROD) |

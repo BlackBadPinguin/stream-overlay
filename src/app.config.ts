@@ -4,6 +4,9 @@ import path from 'path';
 
 export type AppConfig = {
   environment: 'PROD' | 'DEV';
+  /**
+   * Required environment variables
+   */
   environmentVariables: string[];
   redirectUri: string;
   scopes: string[];
@@ -26,24 +29,20 @@ export type AppConfig = {
     role: string;
   };
   log: {
-    apiUrl: string;
-    apiKey: string;
+    /**
+     * Baselime API Key.
+     *
+     * If not set, logs will only be printed to the console.
+     */
+    apiKey: string | undefined;
   };
 };
 
 export const AppConfig: AppConfig = {
   // TODO: Convert into branded type
   environment: determineRuntimeEnvironment(),
-  environmentVariables: [
-    'CLIENT_ID',
-    'CLIENT_SECRET',
-    'TWITCH_CHANNEL',
-    'TWITCH_CHANNEL_ID',
-    'ENDPOINT_PASSWORD',
-    'LOG_API_URL',
-    'LOG_API_KEY',
-  ],
-  redirectUri: determineRuntimeEnvironment() === 'PROD' ? 'https://overlay.tklein.it' : 'http://localhost',
+  environmentVariables: ['CLIENT_ID', 'CLIENT_SECRET', 'TWITCH_CHANNEL', 'TWITCH_CHANNEL_ID', 'ENDPOINT_PASSWORD'],
+  redirectUri: determineRuntimeEnvironment() === 'PROD' ? 'https://overlay.tools.tklein.it' : 'http://localhost',
   scopes: [
     'channel:manage:broadcast',
     'channel:manage:polls',
@@ -87,8 +86,7 @@ export const AppConfig: AppConfig = {
     role: '1164253679956795463',
   },
   log: {
-    apiUrl: process.env.LOG_API_URL as string,
-    apiKey: process.env.LOG_API_KEY as string,
+    apiKey: process.env.BASELIME_API_KEY,
   },
 };
 

@@ -2,10 +2,11 @@ import { Bot, type BotCommand, createBotCommand } from '@twurple/easy-bot';
 import { AppConfig } from '../app.config';
 import { LogCategory, logger } from '../middleware';
 import { AuthManager } from './AuthManager';
-import { TWITCH_CHANNEL, io } from '..';
+import { TWITCH_CHANNEL, io } from '../index';
 
 export class ChatBot {
   private static instance: Bot;
+  private static chatbotLogger = logger.child({ class: ChatBot.name, category: LogCategory.ChatBot });
 
   /**
    * @returns {Bot}
@@ -109,27 +110,23 @@ export class ChatBot {
     try {
       const bot = ChatBot.getInstance();
 
-      bot.onConnect(() => logger.info('Chatbot connected to chat', { category: LogCategory.ChatBot }));
+      bot.onConnect(() => this.chatbotLogger.info('Chatbot connected to chat'));
 
       bot.onDisconnect((manually, reason) => {
-        logger.info("Chatbot {manually} disconnected from chat. Reason '{reason}'", {
-          category: LogCategory.ChatBot,
-          manually: manually ? 'manually' : 'automatically',
-          reason: reason ? reason.message : 'UNKNOWN',
-        });
+        this.chatbotLogger.info(
+          `Chatbot ${manually ? 'manually' : 'automatically'} disconnected from chat. Reason '${
+            reason ? reason.message : 'UNKNOWN'
+          }'`
+        );
       });
 
       bot.onAuthenticationSuccess(() => {
-        logger.info('Chatbot authentificated successfully', { category: LogCategory.ChatBot });
+        this.chatbotLogger.info('Chatbot authentificated successfully');
         AuthManager.getInstance().updateBotStatus('bot', { status: 'RUNNING', reason: 'Connected successfully' });
       });
 
       bot.onAuthenticationFailure((text, retryCount) => {
-        logger.error("Attempt {retryCount} of chatbot-authentification failed because of '{text}'", {
-          category: LogCategory.ChatBot,
-          retryCount: retryCount,
-          text: text,
-        });
+        this.chatbotLogger.error(`Attempt ${retryCount} of chatbot-authentification failed because of '${text}'`);
         AuthManager.getInstance().updateBotStatus('bot', { status: 'STOPPED_INVALID_ACCESS_TOKEN', reason: text });
       });
 
@@ -137,7 +134,7 @@ export class ChatBot {
         const msg = event.text;
         if (msg.substring(0, 1) === AppConfig.chatBot.prefix) return;
 
-        logger.info('{user}::{msg}', { category: LogCategory.ChatMessage, user: event.userName, message: msg });
+        this.chatbotLogger.info(`${event.userName}::${msg}`, { category: LogCategory.ChatMessage });
         io.emit('chatMessage', msg, [false], [event.userDisplayName, false, false, false, false, false]);
       });
 
@@ -156,7 +153,7 @@ export class ChatBot {
         io.emit('twitchEvent', 'gift-sub', userName);
       });
     } catch (error) {
-      logger.error("Couldn't initialise the chat-bot!", { category: LogCategory.ChatBot });
+      this.chatbotLogger.error("Couldn't initialise the chat-bot", error);
     }
   }
 }

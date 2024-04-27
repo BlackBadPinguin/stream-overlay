@@ -1,27 +1,26 @@
 import { type NextFunction, type Request, type Response } from 'express';
 import winston from 'winston';
+import { BaselimeTransport } from '@baselime/winston-transport';
 import { AppConfig } from '../app.config';
-import { SeqTransport } from '@datalust/winston-seq';
+import { requestLogger } from '../index';
 
 export const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(winston.format.errors({ stack: true }), winston.format.json()),
   defaultMeta: {
-    application: 'panthor-stream-overlay',
     environment: AppConfig.environment.toString(),
   },
   transports: [
     new winston.transports.Console({
       format: winston.format.simple(),
     }),
-    ...(AppConfig.environment === 'PROD'
+    ...(AppConfig.log.apiKey !== undefined
       ? [
-          new SeqTransport({
-            serverUrl: AppConfig.log.apiUrl,
-            apiKey: AppConfig.log.apiKey,
-            onError: (e) => console.error(e),
-            handleExceptions: true,
-            handleRejections: true,
+          new BaselimeTransport({
+            baselimeApiKey: process.env.BASELIME_API_KEY,
+            service: 'stream-overlay',
+            dataset: 'stream-overlay',
+            namespace: 'de.panthor.stream-overlay',
           }),
         ]
       : []),
@@ -42,7 +41,8 @@ export enum LogCategory {
 export function logMiddleware(req: Request, res: Response, next: NextFunction) {
   if (req.path.includes('favicon') || req.path === '/status') return next();
   res.on('finish', async () => {
-    logger.info('Processed a request with status code {code}', {
+    requestLogger.info('Processed a request with status code {code}', {
+      namespace: req.path,
       code: res.statusCode.toString(),
       method: req.method,
       ip: req.ip,
