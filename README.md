@@ -6,6 +6,7 @@
 
 - [Stream Overlay](#stream-overlay)
   - [ToC](#toc)
+  - [TL;DR;](#tldr)
   - [Getting started](#getting-started)
   - [Docker](#docker)
   - [Logging](#logging)
@@ -14,6 +15,15 @@
   - [Workflows](#workflows)
     - [Publish Docker Image](#publish-docker-image)
     - [Deploy Image](#deploy-image)
+
+## TL;DR;
+
+> [!TIP]
+>
+> If the application is already online but the current access token has expired, you can follow these steps to issue a new token and restart the event listener.
+
+1. Log in to the page `https://overlay.tools.tklein.it/auth/login?password=<ENDPOINT_PASSWORD>`.
+2. Then visit this page `https://overlay.tools.tklein.it/app/start?password=<ENDPOINT_PASSWORD>`. You should be redirected and receive a message that the chatbot and event listener have been started.
 
 ## Getting started
 
