@@ -100,9 +100,9 @@ export class EventListener {
           this.eventListenerLogger.info(`EventListener connected! More ${userId}`);
         });
 
-        EventListener.onUserSocketDisconnect((userId: string, error: Error) => {
+        EventListener.onUserSocketDisconnect((userId: string, error: Error | undefined) => {
           try {
-            const errorMsg = error.message;
+            const errorMsg = error ? error.message : 'Disconnected without error';
             AuthManager.getInstance().updateBotStatus('eventListener', { status: 'STOPPED', reason: errorMsg });
             this.eventListenerLogger.info(`EventListener disconnected! More ${userId}`);
 
