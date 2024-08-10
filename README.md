@@ -54,13 +54,13 @@
 1. Pull the image
 
    ```bash
-   docker pull ghcr.io/tklein1801/stream-overlay:latest
+   docker pull ghcr.io/blackbadpinguin/stream-overlay:latest
    ```
 
 2. Start an container
 
    ```bash
-   docker run -itd -v test-volume:/app/stream-overlay/data --env-file '.env' --restart on-failure:3 -p '8090:80' --name=stream-overlay docker pull ghcr.io/tklein1801/stream-overlay:latest
+   docker run -itd -v test-volume:/app/stream-overlay/data --env-file '.env' --restart on-failure:3 -p '8090:80' --name=stream-overlay docker pull ghcr.io/blackbadpinguin/stream-overlay:latest
    ```
 
 ## Logging
