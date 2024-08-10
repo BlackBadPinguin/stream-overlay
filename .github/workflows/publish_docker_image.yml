@@ -51,10 +51,10 @@ jobs:
 
       - name: Push Image
         run: |
-          docker tag ${{ env.IMAGE_NAME }}:${{ github.ref_name }} ghcr.io/${{ env.DOCKER_USER | tolower }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-          docker push ghcr.io/${{ env.DOCKER_USER | tolower }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-          docker tag ghcr.io/${{ env.DOCKER_USER | tolower }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} ghcr.io/${{ env.DOCKER_USER | tolower }}/${{ env.IMAGE_NAME }}:latest
-          docker push ghcr.io/${{ env.DOCKER_USER | tolower }}/${{ env.IMAGE_NAME }}:latest
+          docker tag ${{ env.IMAGE_NAME }}:${{ github.ref_name }} ghcr.io/${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          docker push ghcr.io/${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          docker tag ghcr.io/${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} ghcr.io/${{ env.DOCKER_USER | tolower }}/${{ env.IMAGE_NAME }}:latest
+          docker push ghcr.io/${{ env.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
 
   trigger_deployment:
     needs: push_image
