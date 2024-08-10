@@ -52,9 +52,9 @@ jobs:
       - name: Push Image
         run: |
           docker tag ${{ env.IMAGE_NAME }}:${{ github.ref_name }} ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-          docker push ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-          docker tag ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }} ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-          docker push ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+          docker push ghcr.io/blackbadpinguin/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          docker tag ghcr.io/blackbadpinguin/${{ env.IMAGE_NAME }}:${{ github.ref_name }} ghcr.io/blackbadpinguin/${{ env.IMAGE_NAME }}:latest
+          docker push ghcr.io/blackbadpinguin/${{ env.IMAGE_NAME }}:latest
 
   trigger_deployment:
     needs: push_image
