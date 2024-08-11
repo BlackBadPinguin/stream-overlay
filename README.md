@@ -1,6 +1,6 @@
 # Stream Overlay
 
-[![Status](https://monitor.tools.tklein.it/api/badge/3/status?style=for-the-badge)]() [![Uptime](https://monitor.tools.tklein.it/api/badge/3/uptime?style=for-the-badge)]()
+<!-- [![Status](https://monitor.tools.tklein.it/api/badge/3/status?style=for-the-badge)]() [![Uptime](https://monitor.tools.tklein.it/api/badge/3/uptime?style=for-the-badge)]() -->
 
 ## ToC
 
@@ -77,7 +77,7 @@ You can check the status of each service using the following endpoints
 - `/app/bot/status`
 - `/app/listener/status`
 
-Alternatively, you can also visit [PanthorDE Status](//status.tklein.it/status/panthor).
+<!-- Alternatively, you can also visit [PanthorDE Status](//status.tklein.it/status/panthor). -->
 
 </details>
 
@@ -132,7 +132,7 @@ Content-Type: application/json
 > You are able to customize the overlay by providing these query parameters
 
 ```
-https://overlay.tklein.it/static/index.html?...
+https://overlay.teich.land/static/index.html?...
 ```
 
 |  Param   |        Description        |              Example               |
